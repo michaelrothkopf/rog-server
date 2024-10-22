@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+
+    "sourceMap": true,
+    "outDir": "dist",
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": false,
+
+    "strict": true,
+
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/"
+  ]
+}
