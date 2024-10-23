@@ -97,16 +97,15 @@ export const handleSignup = async (req: Request, res: Response) => {
     });
   }
 
-  // maybe try https://stackoverflow.com/questions/27482806/check-if-id-exists-in-a-collection-with-mongoose
   // Check if the username is already in use
-  let existingUser = await User.findOne({ username: { $regex: new RegExp(`^${req.body.username}$`, 'i') }});
+  let existingUser = await User.findOne({ username: { $regex: new RegExp(`^${req.body.username}$`, 'i') }}).exec();
   if (existingUser !== null) {
     return res.status(400).send({
       message: `Username already in use.`,
     });
   }
   // Check if the email is already in use
-  existingUser = await User.findOne({ email: { $regex: new RegExp(`^${req.body.email}$`, 'i') }});
+  existingUser = await User.findOne({ email: { $regex: new RegExp(`^${req.body.email}$`, 'i') }}).exec();
   if (existingUser !== null) {
     return res.status(400).send({
       message: `Email already in use.`,
@@ -117,7 +116,7 @@ export const handleSignup = async (req: Request, res: Response) => {
   const user = await User.create({
     username: req.body.username,
     email: req.body.email,
-    password: hashSync(req.body.password, 10),
+    password: hashSync(req.body.password, PASSWORD_SALT_ROUNDS),
   });
   const authtoken = await Authtoken.create({
     user: user,

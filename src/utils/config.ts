@@ -12,6 +12,8 @@ interface IAppConfig {
   prodPort: number;
   // The mode the server operates in (DEVELOPMENT or PRODUCTION)
   mode: string;
+  // The folder for the game data
+  dataFolderPath: string,
 }
 
 // Attempt to retrieve the configuration options from environment variables
@@ -38,7 +40,6 @@ if (!devPort || typeof devPort !== 'string' || isNaN(+devPort)) {
   logger.emerg(`Invalid development port; not provided in environment variables. Value received ${devPort}`);
   process.exit(-1);
 }
-
 const prodPort = process.env.NAGNAM_NODE_PROD_PORT;
 if (!prodPort || typeof prodPort !== 'string' || isNaN(+prodPort)) {
   logger.emerg(`Invalid production port; not provided in environment variables. Value received ${prodPort}`);
@@ -47,6 +48,11 @@ if (!prodPort || typeof prodPort !== 'string' || isNaN(+prodPort)) {
 const mode = process.env.NAGNAM_NODE_MODE;
 if (!mode || typeof mode !== 'string') {
   logger.emerg(`Invalid application mode; not provided in environment variables. Value received ${mode}`);
+  process.exit(-1);
+}
+const dataFolderPath = process.env.NAGNAM_NODE_DATA_FOLDER_PATH;
+if (!dataFolderPath || typeof dataFolderPath !== 'string') {
+  logger.emerg(`Invalid data folder path; not provided in environment variables. Value received ${dataFolderPath}`);
   process.exit(-1);
 }
 
@@ -59,4 +65,6 @@ export const config: IAppConfig = {
   prodPort: Number(prodPort),
 
   mode,
+
+  dataFolderPath,
 };

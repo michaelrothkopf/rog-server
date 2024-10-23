@@ -131,3 +131,6 @@ dist
 
 # Secret file
 secret.txt
+
+# Game data
+data/

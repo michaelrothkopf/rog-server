@@ -2,6 +2,11 @@ import express from 'express';
 import { createRoutes } from './routes/routes';
 import { config } from './utils/config';
 import { logger } from './utils/logger';
+import { User } from './core/db/schemas/User.model';
+import { connectDatabase } from './core/db/db';
+
+// Connect to the database
+connectDatabase();
 
 // Create the global express app
 export const expressApp = express();
