@@ -1,18 +1,16 @@
 import { Server, Socket } from 'socket.io';
 
 import { HydratedDocument } from 'mongoose'
-import { IUser } from '../db/schemas/User.model';
+import { UserData } from '../db/schemas/User.model';
 
 export class SocketClient {
   // The Socket.IO server object controlled by the parent Server class
   io: Server;
-  // The user's session token
-  sessionToken: string;
 
   // The socket object controlling the client's connection
   socket: Socket;
   // The user the client has authenticated as
-  user: HydratedDocument<IUser>;
+  user: HydratedDocument<UserData>;
 
   /**
    * Hydrates the client object post-authentication
@@ -21,12 +19,11 @@ export class SocketClient {
    * @param user The user the client has authenticated as
    * @param sessionToken The user's session token
    */
-  constructor(io: Server, socket: Socket, user: HydratedDocument<IUser>, sessionToken: string) {
+  constructor(io: Server, socket: Socket, user: HydratedDocument<UserData>) {
     // Set the client information
     this.io = io;
     this.socket = socket;
     this.user = user;
-    this.sessionToken = sessionToken;
 
     this.createEventHandlers();
   }

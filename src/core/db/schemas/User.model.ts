@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export interface IUser {
+export interface UserData {
   username: string,
   email: string,
   password: string,
@@ -13,7 +13,7 @@ export interface IUser {
   lastLogout: Date,
 }
 
-export interface IClientUserData {
+export interface ClientUserData {
   _id: mongoose.Types.ObjectId,
   username: string,
   email: string,
@@ -27,7 +27,7 @@ export interface IClientUserData {
 }
 
 // Create a schema using the interface
-const userSchema = new mongoose.Schema<IUser>({
+const userSchema = new mongoose.Schema<UserData>({
   username: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
@@ -41,4 +41,4 @@ const userSchema = new mongoose.Schema<IUser>({
 });
 
 // Create a model using the schema and interface
-export const User = mongoose.model<IUser>('User', userSchema);
+export const User = mongoose.model<UserData>('User', userSchema);

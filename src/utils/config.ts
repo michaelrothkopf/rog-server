@@ -1,6 +1,6 @@
 import { logger } from './logger';
 
-interface IAppConfig {
+interface AppConfig {
   // The mongoDB host url
   dbUrl: string;
   // The password to access the admin panel
@@ -56,7 +56,7 @@ if (!dataFolderPath || typeof dataFolderPath !== 'string') {
   process.exit(-1);
 }
 
-export const config: IAppConfig = {
+export const config: AppConfig = {
   dbUrl,
 
   adminPassword,

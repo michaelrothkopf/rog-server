@@ -1,14 +1,14 @@
 import { HydratedDocument } from 'mongoose';
-import { IUser, User } from '../db/schemas/User.model';
-import { IAuthtoken, Authtoken } from '../db/schemas/Authtoken.model';
+import { UserData, User } from '../db/schemas/User.model';
+import { AuthtokenData, Authtoken } from '../db/schemas/Authtoken.model';
 
 import { compareSync as comparePassword } from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
-export interface IAuthResult {
+export interface AuthResult {
   success: boolean;
-  user: HydratedDocument<IUser> | null;
-  authtoken: HydratedDocument<IAuthtoken> | null;
+  user: HydratedDocument<UserData> | null;
+  authtoken: HydratedDocument<AuthtokenData> | null;
   message?: string;
 }
 
@@ -16,11 +16,11 @@ export interface IAuthResult {
  * Authenticates a user based on a username and password
  * @param username The user's username
  * @param password The inputted password
- * @returns An IAuthResult type object containing success status and the user object if found
+ * @returns An AuthResult type object containing success status and the user object if found
  */
-export const authenticateUser = async (username: string, password: string): Promise<IAuthResult> => {
+export const authenticateUser = async (username: string, password: string): Promise<AuthResult> => {
   // Get the user
-  const user: HydratedDocument<IUser> | null = await User.findOne({ username: username }).exec();
+  const user: HydratedDocument<UserData> | null = await User.findOne({ username: username }).exec();
 
   // If the user doesn't exist
   if (!user) {
@@ -54,9 +54,9 @@ export const authenticateUser = async (username: string, password: string): Prom
  * @param token The authentication token string to validate
  * @returns The authentication state of the user
  */
-export const validateAuthenticationToken = async (token: string): Promise<IAuthResult> => {
+export const validateAuthenticationToken = async (token: string): Promise<AuthResult> => {
   // Get the auth token
-  const authtoken: HydratedDocument<IAuthtoken> | null = await Authtoken.findOne({ token: token }).exec();
+  const authtoken: HydratedDocument<AuthtokenData> | null = await Authtoken.findOne({ token: token }).exec();
 
   // If the auth token doesn't exist
   if (!authtoken) {
@@ -69,7 +69,7 @@ export const validateAuthenticationToken = async (token: string): Promise<IAuthR
   }
 
   // Get the user
-  const user: HydratedDocument<IUser> | null = await User.findOne({ _id: authtoken.user }).exec();
+  const user: HydratedDocument<UserData> | null = await User.findOne({ _id: authtoken.user }).exec();
 
   // If the user doesn't exist
   if (!user) {

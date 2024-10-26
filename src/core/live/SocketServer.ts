@@ -11,8 +11,6 @@ export class SocketServer {
   io: Server;
   // The clients the server represents
   clients: Map<string, SocketClient>;
-  // The user ID to session ID mapping
-  sessionIds: Map<string, string>;
 
   /**
    * Creates a new SocketServer instance from a given Socket.IO server instance
@@ -21,7 +19,6 @@ export class SocketServer {
   constructor(io: Server) {
     this.io = io;
     this.clients = new Map();
-    this.sessionIds = new Map();
 
     this.createEventHandlers();
   }
@@ -38,9 +35,6 @@ export class SocketServer {
    * @param socket The socket making the connection
    */
   async handleNewConnection(socket: Socket) {
-    // Create a session ID for the client
-    const sid = uuidv4();
-    
     // If the new connection doesn't contain string username and string password
     if (!(typeof socket.handshake.auth.token === 'string')) {
       // Respond and break
@@ -57,11 +51,9 @@ export class SocketServer {
     // If the authentication was successful
     if (authResult.success && authResult.user) {
       // Create a client for the connection
-      const client = new SocketClient(this.io, socket, authResult.user, sid);
+      const client = new SocketClient(this.io, socket, authResult.user);
       // Add the client to the client list
-      this.clients.set(sid, client);
-      // Add the user ID to the sessionId map
-      this.sessionIds.set(authResult.user._id.toString(), sid);
+      this.clients.set(authResult.user._id.toString(), client);
 
       // Respond to the client
       return socket.send('connEstablishRes', {
