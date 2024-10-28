@@ -34,8 +34,13 @@ enum RoundStage {
 
 export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
   gameId: 'HILAR',
+  friendlyName: 'Hilar',
   maxPlayers: 8,
   defaultPlayerData: {
+    // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses
+    // Boilerplate; displayName is always handled by Game.ts's addPlayer function and the Gamemanager
+    displayName: '',
+
     score: 0,
     responses: [],
     questions: [],
@@ -68,7 +73,7 @@ export class Hilar extends Game<HilarPlayerData> {
     super(joinCode, HILAR_GAME_CONFIG, socketServer);
   }
 
-  async beginGame() {
+  async onBegin() {
     // Set up the event handlers
     this.addAllHandlers();
 

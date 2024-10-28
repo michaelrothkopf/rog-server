@@ -17,7 +17,6 @@ export class SocketClient {
    * @param io The Socket.IO server object controlled by the parent Server class
    * @param socket The socket object controlling the client's connection
    * @param user The user the client has authenticated as
-   * @param sessionToken The user's session token
    */
   constructor(io: Server, socket: Socket, user: HydratedDocument<UserData>) {
     // Set the client information

@@ -1,6 +1,7 @@
 import { SocketClient } from './SocketClient';
 
 import { Server, Socket } from 'socket.io';
+import { GameManager } from '../engine/GameManager';
 import { v4 as uuidv4 } from 'uuid';
 
 import mongoose from 'mongoose';
@@ -12,6 +13,8 @@ export class SocketServer {
   // The clients the server represents
   clients: Map<string, SocketClient>;
 
+  gameManager: GameManager;
+
   /**
    * Creates a new SocketServer instance from a given Socket.IO server instance
    * @param io The Socket.IO server instance the class manages
@@ -21,6 +24,7 @@ export class SocketServer {
     this.clients = new Map();
 
     this.createEventHandlers();
+    this.gameManager = new GameManager(this);
   }
 
   /**
@@ -55,6 +59,9 @@ export class SocketServer {
       // Add the client to the client list
       this.clients.set(authResult.user._id.toString(), client);
 
+      // Create the client event handlers
+      this.createClientEventHandlers(client);
+
       // Respond to the client
       return socket.send('connEstablishRes', {
         success: true,
@@ -73,5 +80,25 @@ export class SocketServer {
       success: false,
       user: null,
     });
+  }
+
+  async createClientEventHandlers(client: SocketClient) {
+    client.socket.on('createGame', async payload => {
+      const result = await this.onCreateGame(client, payload);
+    });
+  }
+
+  /**
+   * Handles a request to create a game 
+   * @returns 
+   */
+  async onCreateGame(client: SocketClient, payload: any) {
+    if (typeof payload.gameId !== 'string') {
+      return false;
+    }
+
+    if (this.gameManager.playerInGame(client.user._id.toString())) {
+      return false;
+    }
   }
 }
