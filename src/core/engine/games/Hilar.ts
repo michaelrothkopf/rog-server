@@ -35,6 +35,7 @@ enum RoundStage {
 export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
   gameId: 'HILAR',
   friendlyName: 'Hilar',
+  minPlayers: 4,
   maxPlayers: 8,
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses
@@ -68,9 +69,11 @@ export class Hilar extends Game<HilarPlayerData> {
   /**
    * Creates a new Hilar game instance
    * @param joinCode The join code for this match
+   * @param creatorId The user ID of the creator
+   * @param socketServer The socket server the game is associated with
    */
-  constructor(joinCode: string, socketServer: SocketServer) {
-    super(joinCode, HILAR_GAME_CONFIG, socketServer);
+  constructor(joinCode: string, creatorId: string, socketServer: SocketServer) {
+    super(joinCode, creatorId, HILAR_GAME_CONFIG, socketServer);
   }
 
   async onBegin() {
@@ -199,7 +202,7 @@ export class Hilar extends Game<HilarPlayerData> {
       if (this.currentRoundStage === RoundStage.RESPOND) {
         this.handleQuestionResponse(userId, client, payload);
       } else {
-        client.socket.emit('hilarError', {
+        client.socket.emit('gameError', {
           message: 'Client error: not currently accepting question responses',
         });
       }
@@ -210,7 +213,7 @@ export class Hilar extends Game<HilarPlayerData> {
       if (this.currentRoundStage === RoundStage.VOTE) {
         this.handleVote(userId, client, payload);
       } else {
-        client.socket.emit('hilarError', {
+        client.socket.emit('gameError', {
           message: 'Client error: not currently accepting votes',
         });
       }
@@ -227,7 +230,7 @@ export class Hilar extends Game<HilarPlayerData> {
   handleQuestionResponse(userId: string, client: SocketClient, payload: any) {
     // If there is no or invalid response text
     if (typeof payload.responseText !== 'string') {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'Client error: response must be a string',
       });
       return;
@@ -236,7 +239,7 @@ export class Hilar extends Game<HilarPlayerData> {
     // If the player is not in the game
     const player = this.players.get(userId);
     if (!player) {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'Cannot process response because you have been removed from the game.',
       });
       return;
@@ -262,7 +265,7 @@ export class Hilar extends Game<HilarPlayerData> {
     }
     // There was an error
     else {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'You have already responded to both questions.',
       });
       return;
@@ -279,7 +282,7 @@ export class Hilar extends Game<HilarPlayerData> {
   handleVote(userId: string, client: SocketClient, payload: any) {
     // If there is no or invalid response text
     if (typeof payload.vote !== 'number' || !(payload.vote === -1 || payload.vote === 1)) {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'Client error: vote must be either -1 or 1 as a number',
       });
       return;
@@ -288,7 +291,7 @@ export class Hilar extends Game<HilarPlayerData> {
     // If the player is not in the game
     const player = this.players.get(userId);
     if (!player) {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'Cannot process response because you have been removed from the game.',
       });
       return;
@@ -296,7 +299,7 @@ export class Hilar extends Game<HilarPlayerData> {
 
     // If the player has already voted
     if (player.hasVoted) {
-      client.socket.emit('hilarError', {
+      client.socket.emit('gameError', {
         message: 'Client error: you have already voted!',
       });
       return;

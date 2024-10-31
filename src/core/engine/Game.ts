@@ -12,6 +12,7 @@ export interface BasePlayerData {
 export interface GameConfig<T_PlayerData extends BasePlayerData> {
   gameId: string;
   friendlyName: string;
+  minPlayers: number;
   maxPlayers: number;
   defaultPlayerData: T_PlayerData;
 }
@@ -22,16 +23,21 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   players: Map<string, T_PlayerData>;
   gameConfig: GameConfig<T_PlayerData>;
   socketServer: SocketServer;
+  creatorId: string;
+
   hasBegun: boolean;
 
   /**
    * Creates a new abstract Game
    * @param joinCode The join code for the match
+   * @param creatorId The user ID of the creator of the game
    * @param gameConfig The configuration for the game (constant across all instances of the same game)
+   * @param socketServer The socket server the game is associated with
    */
-  constructor(joinCode: string, gameConfig: GameConfig<T_PlayerData>, socketServer: SocketServer) {
+  constructor(joinCode: string, creatorId: string, gameConfig: GameConfig<T_PlayerData>, socketServer: SocketServer) {
     this.joinCode = joinCode;
     this.players = new Map();
+    this.creatorId = creatorId;
 
     this.gameConfig = gameConfig;
 

@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import mongoose from 'mongoose';
 import { authenticateUser, validateAuthenticationToken } from '../auth/auth';
+import { logger } from '../../utils/logger';
 
 export class SocketServer {
   // The Socket.IO server instance the class manages
@@ -24,7 +25,7 @@ export class SocketServer {
     this.clients = new Map();
 
     this.createEventHandlers();
-    this.gameManager = new GameManager(this);
+    this.gameManager = new GameManager();
   }
 
   /**
@@ -85,6 +86,32 @@ export class SocketServer {
   async createClientEventHandlers(client: SocketClient) {
     client.socket.on('createGame', async payload => {
       const result = await this.onCreateGame(client, payload);
+      if (result) {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) created a game of type ${payload.gameId}.`);
+      }
+      else {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to create a game with payload ${payload}.`);
+      }
+    });
+
+    client.socket.on('joinGame', async payload => {
+      const result = await this.onJoinGame(client, payload);
+      if (result) {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) joined a game with code ${payload.joinCode}.`);
+      }
+      else {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to join a game with payload ${payload}.`);
+      }
+    });
+
+    client.socket.on('beginGame', async payload => {
+      const result = await this.onJoinGame(client, payload);
+      if (result) {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) began a game with code ${payload.joinCode}.`);
+      }
+      else {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to begin a game.`);
+      }
     });
   }
 
@@ -92,13 +119,31 @@ export class SocketServer {
    * Handles a request to create a game 
    * @returns 
    */
-  async onCreateGame(client: SocketClient, payload: any) {
+  async onCreateGame(client: SocketClient, payload: any): Promise<boolean> {
     if (typeof payload.gameId !== 'string') {
       return false;
     }
 
-    if (this.gameManager.playerInGame(client.user._id.toString())) {
+    return await this.gameManager.createGame(payload.gameId, client, this);
+  }
+
+  /**
+   * Handles a request to join a game 
+   * @returns Whether the game joined successfully
+   */
+  async onJoinGame(client: SocketClient, payload: any): Promise<boolean> {
+    if (typeof payload.joinCode !== 'string') {
       return false;
     }
+
+    return await this.gameManager.joinGame(payload.joinCode, client);
+  }
+
+  /**
+   * Handles a request to begin a game 
+   * @returns Whether the game began successfully
+   */
+  async onBeginGame(client: SocketClient): Promise<boolean> {
+    return await this.gameManager.beginGame(client);
   }
 }
