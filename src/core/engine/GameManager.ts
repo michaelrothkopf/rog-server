@@ -20,16 +20,7 @@ export class GameManager {
 
   joinCodeGenerator: JoinCodeGenerator = new JoinCodeGenerator();
 
-  /**
-   * Creates a new GameManager
-   * @param socketServer The socket server to host the games on
-   */
-  constructor() {
-  }
-
-  async hostGames() {
-
-  }
+  constructor() {}
 
   /**
    * Attempts to join a game
