@@ -14,7 +14,7 @@ export interface AuthtokenData {
 
 // Create a schema using the interface
 const AuthtokenSchema = new mongoose.Schema<AuthtokenData>({
-  user: { type: mongoose.Schema.Types.ObjectId, required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
   token: { type: String, required: true, default: uuidv4() },
   expires: { type: Date, required: true, default: (Date.now() + AUTH_TOKEN_LIFESPAN), },
 });
