@@ -20,6 +20,16 @@ connectDatabase();
 // Create the global express app
 export const expressApp = express();
 
+// Use JSON to parse bodies
+expressApp.use(express.json());
+
+// CORS makes me sad
+expressApp.use((req, res, next) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Headers', '*');
+  next();
+});
+
 // Create the http server
 let httpServer: HTTPServer | HTTPSServer;
 if (config.mode === 'PRODUCTION') {
@@ -41,9 +51,6 @@ export const ioServer = new SocketIOServer(httpServer, {
 
 // Create the SocketServer
 export const liveServer = new SocketServer(ioServer);
-
-// Use JSON to parse bodies
-expressApp.use(express.json());
 
 // Add the routes
 createRoutes(expressApp);

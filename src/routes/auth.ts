@@ -4,7 +4,7 @@ import { hashSync as hashPassword, hashSync } from 'bcrypt';
 
 import { Request, Response } from 'express';
 import { User } from '../core/db/schemas/User.model';
-import { Authtoken } from '../core/db/schemas/Authtoken.model';
+import { Authtoken, AUTH_TOKEN_LIFESPAN } from '../core/db/schemas/Authtoken.model';
 
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 32;
@@ -57,9 +57,10 @@ export const handleLogin = async (req: Request, res: Response) => {
   }
 
   // Authentication successful
-  return res.status(200).cookie('NANGAM_AUTH_TOKEN', authResult.authtoken.token).send({
+  return res.status(200).cookie('NANGAM_AUTH_TOKEN', authResult.authtoken.token, { maxAge: AUTH_TOKEN_LIFESPAN }).send({
     message: `Authentication successful.`,
     token: authResult.authtoken.token,
+    tokenExpires: authResult.authtoken.expires,
     user: {
       _id: authResult.user._id,
       username: authResult.user.username,

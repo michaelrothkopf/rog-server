@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
-const AUTH_TOKEN_LIFESPAN = 30 * 24 * 60 * 60 * 1000;
+export const AUTH_TOKEN_LIFESPAN = 30 * 24 * 60 * 60 * 1000;
 
 export interface AuthtokenData {
   // The user that this token authenticates
