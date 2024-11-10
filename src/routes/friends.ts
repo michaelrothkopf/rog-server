@@ -59,6 +59,7 @@ export const handleGetFriendRequests = async (req: Request, res: Response) => {
   const clientFriendRequestList: any[] = [];
   for (const friendship of rawFriendRequests) {
     const result = {
+      _id: friendship._id,
       initiator: UNAVAILABLE_USER,
       recipient: UNAVAILABLE_USER,
       accepted: friendship.accepted,
@@ -91,14 +92,14 @@ export const handleCreateFriendRequest = async (req: Request, res: Response) => 
     });
   }
 
-  // If the request body doesn't contain the other user's ID
+  // If the request body doesn't contain the other user's username
   if (!req.body.recipient || !(typeof req.body.recipient === 'string')) {
     return res.status(400).send({
-      message: `Failed to create friend request: recipient user ID not specified.`,
+      message: `Failed to create friend request: recipient username not specified.`,
     });
   }
 
-  const recipient = await User.findById(req.body.recipient);
+  const recipient = await User.findOne({ username: req.body.recipient });
   // If the other user doesn't exist
   if (!recipient) {
     return res.status(400).send({

@@ -103,6 +103,7 @@ export const getUserFriendRequests = async (user: HydratedDocument<UserData>): P
   const friendRequests = await Friendship.find({
     accepted: false,
     $or: [
+      { initiator: user._id },
       { recipient: user._id },
     ]
   });
