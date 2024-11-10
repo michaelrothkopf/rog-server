@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 export interface UserData {
+  _id: mongoose.Types.ObjectId,
   username: string,
   email: string,
   password: string,
@@ -26,6 +27,15 @@ export interface ClientUserData {
   lastLogout: Date,
 }
 
+export const UNAVAILABLE_USER: ClientUserData = {
+  _id: new mongoose.Types.ObjectId('000000000000000000000000'),
+  username: 'user_unavailable',
+  email: 'unavailable@example.com',
+  locked: false,
+  lastLogin: new Date(),
+  lastLogout: new Date(),
+}
+
 // Create a schema using the interface
 const userSchema = new mongoose.Schema<UserData>({
   username: { type: String, required: true },
@@ -42,3 +52,14 @@ const userSchema = new mongoose.Schema<UserData>({
 
 // Create a model using the schema and interface
 export const User = mongoose.model<UserData>('User', userSchema);
+
+export const sanitizeUserData = (user: UserData | ClientUserData): ClientUserData => {
+  return {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    locked: user.locked,
+    lastLogin: user.lastLogin,
+    lastLogout: user.lastLogout,
+  };
+}

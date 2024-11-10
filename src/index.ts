@@ -27,6 +27,8 @@ expressApp.use(express.json());
 expressApp.use((req, res, next) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Headers', '*');
+  // Update: really, DELETE causes this to be a problem
+  res.set('Access-Control-Allow-Methods', '*');
   next();
 });
 

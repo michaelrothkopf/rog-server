@@ -56,7 +56,7 @@ export const authenticateUser = async (username: string, password: string): Prom
  */
 export const validateAuthenticationToken = async (token: string): Promise<AuthResult> => {
   // Get the auth token
-  const authtoken: HydratedDocument<AuthtokenData> | null = await Authtoken.findOne({ token: token }).exec();
+  const authtoken: HydratedDocument<AuthtokenData> | null = await Authtoken.findOne({ token: token });
 
   // If the auth token doesn't exist
   if (!authtoken) {
@@ -69,7 +69,7 @@ export const validateAuthenticationToken = async (token: string): Promise<AuthRe
   }
 
   // Get the user
-  const user: HydratedDocument<UserData> | null = await User.findOne({ _id: authtoken.user }).exec();
+  const user: HydratedDocument<UserData> | null = await User.findById(authtoken.user);
 
   // If the user doesn't exist
   if (!user) {
