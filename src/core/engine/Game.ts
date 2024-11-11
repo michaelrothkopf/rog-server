@@ -3,6 +3,7 @@ import { config } from '../../utils/config';
 
 import { SocketServer } from '../live/SocketServer';
 import { SocketClient } from '../live/SocketClient';
+import { logger } from '../../utils/logger';
 
 export const dataFolderPath = path.resolve(config.dataFolderPath);
 
@@ -22,7 +23,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   // Map from User._id (string) to T_PlayerData (game dependent)
   players: Map<string, T_PlayerData>;
   gameConfig: GameConfig<T_PlayerData>;
-  socketServer: SocketServer;
+  getClient: (id: string) => SocketClient | undefined;
   creatorId: string;
 
   hasBegun: boolean;
@@ -32,16 +33,16 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
    * @param joinCode The join code for the match
    * @param creatorId The user ID of the creator of the game
    * @param gameConfig The configuration for the game (constant across all instances of the same game)
-   * @param socketServer The socket server the game is associated with
+   * @param getClient A function to get a client's SocketClient from the server
    */
-  constructor(joinCode: string, creatorId: string, gameConfig: GameConfig<T_PlayerData>, socketServer: SocketServer) {
+  constructor(joinCode: string, creatorId: string, gameConfig: GameConfig<T_PlayerData>, getClient: (id: string) => SocketClient | undefined) {
     this.joinCode = joinCode;
     this.players = new Map();
     this.creatorId = creatorId;
 
     this.gameConfig = gameConfig;
 
-    this.socketServer = socketServer;
+    this.getClient = getClient;
 
     this.hasBegun = false;
   }
@@ -66,10 +67,10 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
 
     // If no initial data is passed, use the default
     if (initialData === null) {
-      this.players.set(userId, this.gameConfig.defaultPlayerData);
+      this.players.set(userId, {...this.gameConfig.defaultPlayerData});
     }
     else {
-      this.players.set(userId, initialData);
+      this.players.set(userId, {...initialData});
     }
     
     // Really TypeScript I just set this value
@@ -107,7 +108,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   sendAll(event: string, ...args: any[]) {
     for (const p of this.players) {
       // Get the client associated with the player and send it the questions
-      const client = this.socketServer.clients.get(p[0]);
+      const client = this.getClient(p[0]);
       if (!client) continue;
       client.socket.emit(event, args);
     }
@@ -119,7 +120,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   addAllHandlers() {
     for (const p of this.players) {
       // Get the client associated with the player and call addHandlers for that client
-      const client = this.socketServer.clients.get(p[0]);
+      const client = this.getClient(p[0]);
       if (!client) continue;
       this.addHandlers(p[0], client);
     }

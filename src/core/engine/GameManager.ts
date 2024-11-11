@@ -65,7 +65,7 @@ export class GameManager {
     player.socket.emit('gameInfo', {
       gameId: game.gameConfig.gameId,
       joinCode: game.joinCode,
-    })
+    });
 
     return true;
   }
@@ -133,7 +133,7 @@ export class GameManager {
 
     // Select the game from the available games
     if (gameId === 'HILAR') {
-      game = new Hilar(joinCode, creator.user._id.toString(), server);
+      game = new Hilar(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id));
     }
     else {
       creator.socket.emit('gameError', {
@@ -214,9 +214,9 @@ export class GameManager {
    * @returns Whether the player is currently in a game
    */
   playerInGame(userId: string): boolean {
-    this.activeGames.forEach((g) => {
-      if (g.players.has(userId)) return true;
-    });
+    for (const game of this.activeGames) {
+      if (game[1].players.has(userId)) return true;
+    }
     return false;
   }
 }

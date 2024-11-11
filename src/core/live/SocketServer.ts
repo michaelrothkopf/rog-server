@@ -63,8 +63,8 @@ export class SocketServer {
       // Create the client event handlers
       this.createClientEventHandlers(client);
 
-      // Respond to the client
-      return socket.send('connEstablishRes', {
+      // Confirm the connection to the client
+      socket.send('connEstablishRes', {
         success: true,
         user: {
           _id: authResult.user._id,
@@ -75,6 +75,19 @@ export class SocketServer {
           lastLogout: authResult.user.lastLogout,
         }
       });
+
+      // If the client is in a game
+      const game = this.gameManager.getPlayerGame(authResult.user._id.toString())
+      if (game) {
+        // Send game info to the client
+        client.socket.emit('gameInfo', {
+          gameId: game.gameConfig.gameId,
+          joinCode: game.joinCode,
+        });
+      }
+
+      // Break out here to avoid sending failure
+      return;
     }
     // The authentication was not successful, respond to the client
     return socket.send('connEstablishRes', {

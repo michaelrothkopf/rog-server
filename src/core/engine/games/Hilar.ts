@@ -70,10 +70,10 @@ export class Hilar extends Game<HilarPlayerData> {
    * Creates a new Hilar game instance
    * @param joinCode The join code for this match
    * @param creatorId The user ID of the creator
-   * @param socketServer The socket server the game is associated with
+   * @param getClient A function to get a client's SocketClient from the server
    */
-  constructor(joinCode: string, creatorId: string, socketServer: SocketServer) {
-    super(joinCode, creatorId, HILAR_GAME_CONFIG, socketServer);
+  constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined) {
+    super(joinCode, creatorId, HILAR_GAME_CONFIG, getClient);
   }
 
   async onBegin() {
@@ -366,7 +366,7 @@ export class Hilar extends Game<HilarPlayerData> {
   sendQuestions() {
     for (const p of this.players) {
       // Get the client associated with the player and send it the questions
-      const client = this.socketServer.clients.get(p[0]);
+      const client = this.getClient(p[0]);
       if (!client) continue;
       client.socket.emit('hilarQuestions', p[1].questions);
     }
