@@ -77,10 +77,15 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
     if (!p) return;
     p.displayName = displayName;
 
+    const players = [];
+    for (const [userId, userData] of this.players) {
+      players.push({
+        userId, displayName: userData.displayName
+      });
+    }
     // Broadcast the new list of players
     this.sendAll('gamePlayers', {
-      playerIds: Array.from(this.players.keys()),
-      playerNames: Array.from(this.players.values()).map(p => p.displayName),
+      players,
     });
   }
 

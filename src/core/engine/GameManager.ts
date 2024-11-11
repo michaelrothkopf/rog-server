@@ -45,7 +45,7 @@ export class GameManager {
       // Send the player an error message
       player.socket.emit('gameError', {
         module: 'JOIN',
-        message: 'Game does not exist',
+        message: `Game '${joinCode}' does not exist`,
       });
       return false;
     }
@@ -61,6 +61,11 @@ export class GameManager {
     
     // No errors, join the game
     game.addPlayer(player.user._id.toString(), player.user.username);
+
+    player.socket.emit('gameInfo', {
+      gameId: game.gameConfig.gameId,
+      joinCode: game.joinCode,
+    })
 
     return true;
   }
@@ -143,8 +148,11 @@ export class GameManager {
       joinCode,
     });
 
+    // Add the game to the active games list
+    this.activeGames.set(joinCode, game);
+
     // Add the player to the game
-    this.joinGame(gameId, creator);
+    this.joinGame(joinCode, creator);
 
     // Set the join timeout to avoid 
     setTimeout(() => {
@@ -174,6 +182,8 @@ export class GameManager {
    * @param joinCode The join code of the game to destroy
    */
   destroyGame(joinCode: string) {
+    logger.debug(`Deleted game ${joinCode}.`);
+    
     // Attempt to fetch the game
     const game = this.activeGames.get(joinCode);
 
