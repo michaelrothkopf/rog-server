@@ -26,9 +26,10 @@ export class GameManager {
    * Attempts to join a game
    * @param joinCode The join code of the game to join
    * @param player The player attempting to join the game
+   * @param isHost Whether the player joining is the host
    * @returns Whether the player successfully joined
    */
-  async joinGame(joinCode: string, player: SocketClient): Promise<boolean> {
+  async joinGame(joinCode: string, player: SocketClient, isHost?: boolean): Promise<boolean> {
     // If the player is already in a game
     if (this.playerInGame(player.user._id.toString())) {
       // Send the player an error message
@@ -65,6 +66,7 @@ export class GameManager {
     player.socket.emit('gameInfo', {
       gameId: game.gameConfig.gameId,
       joinCode: game.joinCode,
+      isHost: isHost || false,
     });
 
     return true;
@@ -142,17 +144,18 @@ export class GameManager {
       return false;
     }
 
-    // Send the game data to the creator
-    creator.socket.emit('gameInfo', {
-      gameId,
-      joinCode,
-    });
+    // // Send the game data to the creator (removed b/c duplicate)
+    // creator.socket.emit('gameInfo', {
+    //   gameId,
+    //   joinCode,
+    //   isHost: true,
+    // });
 
     // Add the game to the active games list
     this.activeGames.set(joinCode, game);
 
     // Add the player to the game
-    this.joinGame(joinCode, creator);
+    this.joinGame(joinCode, creator, true);
 
     // Set the join timeout to avoid 
     setTimeout(() => {
@@ -202,9 +205,9 @@ export class GameManager {
    * @returns The game the player is in or null if no game found
    */
   getPlayerGame(userId: string): Game<BasePlayerData> | null {
-    this.activeGames.forEach((g) => {
+    for (const g of this.activeGames.values()) {
       if (g.players.has(userId)) return g;
-    });
+    }
     return null;
   }
 

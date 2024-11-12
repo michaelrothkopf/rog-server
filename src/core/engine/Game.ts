@@ -49,6 +49,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
 
   async beginGame(): Promise<any> {
     this.hasBegun = true;
+    this.sendAll('gameBegin');
     return await this.onBegin();
   }
   async onBegin(): Promise<any> {}

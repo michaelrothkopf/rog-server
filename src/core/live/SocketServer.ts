@@ -83,6 +83,7 @@ export class SocketServer {
         client.socket.emit('gameInfo', {
           gameId: game.gameConfig.gameId,
           joinCode: game.joinCode,
+          isHost: game.creatorId === client.user._id.toString(),
         });
       }
 
@@ -117,10 +118,10 @@ export class SocketServer {
       }
     });
 
-    client.socket.on('beginGame', async payload => {
-      const result = await this.onJoinGame(client, payload);
+    client.socket.on('beginGame', async () => {
+      const result = await this.onBeginGame(client);
       if (result) {
-        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) began a game with code ${payload.joinCode}.`);
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) began a game.`);
       }
       else {
         logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to begin a game.`);

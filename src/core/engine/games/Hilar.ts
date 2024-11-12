@@ -35,7 +35,7 @@ enum RoundStage {
 export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
   gameId: 'HILAR',
   friendlyName: 'Hilar',
-  minPlayers: 4,
+  minPlayers: 2,
   maxPlayers: 8,
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses
@@ -112,7 +112,7 @@ export class Hilar extends Game<HilarPlayerData> {
       // If it doesn't exist, fail the game
       if (!qResp) {
         logger.error(`During Hilar game: question response for question ${q} not found. Aborting game with ${this.players.size} players.`);
-        this.sendAll('gameServerError', {
+        this.sendAll('gameError', {
           message: 'Unfortunately, due to a server error, the game has crashed. Please contact support if the issue persists.',
         });
         return false;
@@ -318,7 +318,7 @@ export class Hilar extends Game<HilarPlayerData> {
     // Reset the question responses
     this.currentQuestionResponses = [];
     // Copy the question set to avoid duplicating
-    const qCopy = questionSetUnfriendly;
+    const qCopy = questionSetUnfriendly.map(x => x);
     for (let i = 0; i < this.players.size; i++) {
       const qText = qCopy.splice(Math.floor(Math.random() * qCopy.length), 1)[0];
       this.currentQuestions.push(qText);
@@ -335,28 +335,30 @@ export class Hilar extends Game<HilarPlayerData> {
     for (let i = 0; i < this.currentQuestions.length; i++) {
       pool.push(i, i);
     }
-    for (const p of this.players) {
+    for (const p of this.players.values()) {
       // Reset the player's questions
-      p[1].questions = [];
-      p[1].questionIndices = [];
-      p[1].responses = [];
+      p.questions = [];
+      p.questionIndices = [];
+      p.responses = [];
       
       // Pick a random first question from the pool
       const q1 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
       // Pick a random second question from the pool, reshuffling until a unique question is received
       let q2: number;
       do {
+        // Use q2 to store the index and check its value against q1
         q2 = Math.floor(Math.random() * pool.length);
-      } while (pool[q2] == q1);
+      } while (pool[q2] === q1);
+      // Set q2 to the actual question index from the pool
       q2 = pool.splice(q2, 1)[0];
 
       // Push the new prompt strings to the array
-      p[1].questions.push(this.currentQuestions[q1]);
-      p[1].questions.push(this.currentQuestions[q2]);
+      p.questions.push(this.currentQuestions[q1]);
+      p.questions.push(this.currentQuestions[q2]);
 
       // Push the indices to the server-side player data
-      p[1].questionIndices.push(q1);
-      p[1].questionIndices.push(q2);
+      p.questionIndices.push(q1);
+      p.questionIndices.push(q2);
     }
   }
 
@@ -364,11 +366,13 @@ export class Hilar extends Game<HilarPlayerData> {
    * Sends the players their associated questions
    */
   sendQuestions() {
-    for (const p of this.players) {
+    logger.debug(`Sending questions to players`);
+    for (const [uid, p] of this.players) {
       // Get the client associated with the player and send it the questions
-      const client = this.getClient(p[0]);
+      const client = this.getClient(uid);
       if (!client) continue;
-      client.socket.emit('hilarQuestions', p[1].questions);
+      logger.debug(`Sending questions to player ${p.displayName}`);
+      client.socket.emit('hilarQuestions', p.questions);
     }
   }
 }
