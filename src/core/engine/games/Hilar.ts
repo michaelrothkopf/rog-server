@@ -105,8 +105,8 @@ export class Hilar extends Game<HilarPlayerData> {
     this.currentRoundStage = RoundStage.LOAD;
 
     // For each question, send the question and await results
-    for (let i = 0; i < this.currentQuestionResponses.length; i++) {
-      const q = this.currentQuestionResponses[i];
+    for (let i = 0; i < this.currentQuestions.length; i++) {
+      const q = this.currentQuestions[i];
       // Get the current question response
       const qResp = this.currentQuestionResponses[i];
       // If it doesn't exist, fail the game
@@ -116,6 +116,21 @@ export class Hilar extends Game<HilarPlayerData> {
           message: 'Unfortunately, due to a server error, the game has crashed. Please contact support if the issue persists.',
         });
         return false;
+      }
+
+      // If there aren't any responses
+      if (qResp.length === 0) {
+        this.sendAll('hilarNoResponses');
+        await new Promise(resolve => setTimeout(resolve, RESULT_DISPLAY_TIME));
+        continue;
+      }
+      if (qResp.length === 1) {
+        this.sendAll('hilarOneResponse', {
+          prompt: q,
+          winner: qResp[0].userId,
+        });
+        await new Promise(resolve => setTimeout(resolve, RESULT_DISPLAY_TIME));
+        continue;
       }
 
       this.sendAll('hilarVoteQuestion', {
@@ -257,7 +272,7 @@ export class Hilar extends Game<HilarPlayerData> {
     }
     // If this response is the second
     else if (player.responses.length === 2) {
-      // Assign it to the first question
+      // Assign it to the second question
       this.currentQuestionResponses[player.questionIndices[1]].push({
         responseText: payload.responseText,
         userId: userId,
@@ -372,7 +387,7 @@ export class Hilar extends Game<HilarPlayerData> {
       const client = this.getClient(uid);
       if (!client) continue;
       logger.debug(`Sending questions to player ${p.displayName}`);
-      client.socket.emit('hilarQuestions', p.questions);
+      client.socket.emit('hilarQuestions', { questions: p.questions });
     }
   }
 }
