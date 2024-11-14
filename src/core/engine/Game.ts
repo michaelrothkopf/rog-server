@@ -102,6 +102,18 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   }
 
   /**
+   * Sends one player some data
+   * @param userId The player to send the data to
+   * @param event The event name to send the data under
+   * @param args The arguments to pass to the emit function
+   */
+  sendOne(userId: string, event: string, ...args: any[]) {
+    const client = this.getClient(userId);
+    if (!client) return;
+    client.socket.emit(event, ...args);
+  }
+
+  /**
    * Sends all players some data
    * @param event The event name to send the data under
    * @param args The arguments to pass to the emit function
@@ -111,7 +123,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
       // Get the client associated with the player and send it the questions
       const client = this.getClient(p[0]);
       if (!client) continue;
-      client.socket.emit(event, args);
+      client.socket.emit(event, ...args);
     }
   }
 

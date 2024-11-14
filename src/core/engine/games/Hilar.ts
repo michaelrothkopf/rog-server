@@ -46,7 +46,7 @@ export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
     responses: [],
     questions: [],
     questionIndices: [],
-    hasVoted: false,
+    canVote: false,
   }
 };
 
@@ -55,7 +55,7 @@ export interface HilarPlayerData extends BasePlayerData {
   responses: string[];
   questions: string[];
   questionIndices: number[];
-  hasVoted: boolean;
+  canVote: boolean;
 }
 
 export class Hilar extends Game<HilarPlayerData> {
@@ -63,7 +63,7 @@ export class Hilar extends Game<HilarPlayerData> {
   currentRoundStage: RoundStage = RoundStage.LOAD;
   currentQuestions: string[] = [];
   currentQuestionResponses: QuestionResponse[][] = [];
-
+  currentResponsesCount: number = 0;
   currentQuestionVotes: number = 0;
 
   /**
@@ -87,6 +87,10 @@ export class Hilar extends Game<HilarPlayerData> {
   }
 
   async playRound(): Promise<boolean> {
+    this.sendOne(this.creatorId, 'hilarTEST', {
+      htest: true,
+      dat: '123',
+    });
     this.currentRound++;
     this.currentRoundStage = RoundStage.LOAD;
 
@@ -133,11 +137,35 @@ export class Hilar extends Game<HilarPlayerData> {
         continue;
       }
 
-      this.sendAll('hilarVoteQuestion', {
-        prompt: q,
-        // Send just the response text of each option (do not tell user who made response)
-        options: qResp.map((r) => r.responseText),
-      });
+      // Mark all users who didn't answer the question as unvoted
+      // for (const [uid, p] of this.players.entries()) {
+      //   // if (uid === qResp[0].userId || uid === qResp[1].userId) continue;
+      //   p.canVote = false;
+      // }
+
+      // this.sendAll('hilarVoteQuestion', {
+      //   prompt: q,
+      //   // Send just the response text of each option (do not tell user who made response)
+      //   options: qResp.map((r) => r.responseText),
+      // });
+
+      // Process responses to only include the text
+      const options = qResp.map(r => r.responseText);
+      // Send out the question for voting
+      for (const [uid, p] of this.players.entries()) {
+        let canVote = false;
+        // If the user ID doesn't match the response user IDs
+        if (uid !== qResp[0].userId && uid !== qResp[1].userId) {
+          canVote = true;
+          // Reset canVote to allow this player to vote
+          p.canVote = true;
+        }
+        this.sendOne(uid, 'hilarVoteQuestion', {
+          prompt: q,
+          options,
+          canVote,
+        });
+      }
 
       this.currentRoundStage = RoundStage.VOTE;
 
@@ -158,27 +186,45 @@ export class Hilar extends Game<HilarPlayerData> {
 
       // The first option won
       if (this.currentQuestionVotes < 0) {
+        const scoreChange = POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound;
+        p1.score += scoreChange;
+
         this.sendAll('hilarVoteResult', {
           winner: 1,
+          p1name: p1.displayName,
+          p2name: p2.displayName,
+          newScore1: p1.score,
+          newScore2: p2.score,
+          scoreChange,
         });
-
-        p1.score += POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound;
       }
       else if (this.currentQuestionVotes > 0) {
+        const scoreChange = POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound;
+        p2.score += scoreChange;
+
         this.sendAll('hilarVoteResult', {
           winner: 2,
+          p1name: p1.displayName,
+          p2name: p2.displayName,
+          newScore1: p1.score,
+          newScore2: p2.score,
+          scoreChange,
         });
-
-        p2.score += POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound;
       }
       // Tie
       else {
-        this.sendAll('hilarVoteResult', {
-          winner: 0
-        });
+        const scoreChange = Math.round((POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound) / 2);
+        p1.score += scoreChange;
+        p2.score += scoreChange;
 
-        p1.score += Math.round((POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound) / 2);
-        p2.score += Math.round((POINTS_PER_RESPONSE + ROUND_BONUS_POINTS * this.currentRound) / 2);
+        this.sendAll('hilarVoteResult', {
+          winner: 0,
+          p1name: p1.displayName,
+          p2name: p2.displayName,
+          newScore1: p1.score,
+          newScore2: p2.score,
+          scoreChange,
+        });
       }
 
       this.currentRoundStage = RoundStage.RESULTS;
@@ -195,6 +241,7 @@ export class Hilar extends Game<HilarPlayerData> {
       standings: Array.from(this.players.entries()).sort((a, b) => a[1].score - b[1].score).map(p => {
         return {
           userId: p[0],
+          displayName: p[1].displayName,
           score: p[1].score,
         };
       }),
@@ -285,6 +332,11 @@ export class Hilar extends Game<HilarPlayerData> {
       });
       return;
     }
+
+    this.currentResponsesCount++;
+    if (this.currentResponsesCount >= (this.players.size * 2)) {
+      // TODO: Trigger round advancement and reset this variable later
+    }
   }
 
   /**
@@ -313,12 +365,15 @@ export class Hilar extends Game<HilarPlayerData> {
     }
 
     // If the player has already voted
-    if (player.hasVoted) {
+    if (!player.canVote) {
       client.socket.emit('gameError', {
-        message: 'Client error: you have already voted!',
+        message: 'Client error: you have already voted or answered this question!',
       });
       return;
     }
+
+    // Mark the player as having voted
+    player.canVote = false;
 
     // Add to the current votes
     this.currentQuestionVotes += payload.vote;
@@ -381,13 +436,9 @@ export class Hilar extends Game<HilarPlayerData> {
    * Sends the players their associated questions
    */
   sendQuestions() {
-    logger.debug(`Sending questions to players`);
     for (const [uid, p] of this.players) {
       // Get the client associated with the player and send it the questions
-      const client = this.getClient(uid);
-      if (!client) continue;
-      logger.debug(`Sending questions to player ${p.displayName}`);
-      client.socket.emit('hilarQuestions', { questions: p.questions });
+      this.sendOne(uid, 'hilarQuestions', { questions: p.questions });
     }
   }
 }
