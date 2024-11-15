@@ -5,6 +5,7 @@ import path from 'path';
 import { SocketServer } from '../../live/SocketServer';
 import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
+import { createBypassableWait, createWait, TimerState } from '../wait';
 
 const questionSetUnfriendly = fs.readFileSync(path.join(dataFolderPath, 'hilar', 'QS1U.txt')).toString().split(/\r?\n/);
 
@@ -65,6 +66,7 @@ export class Hilar extends Game<HilarPlayerData> {
   currentQuestionResponses: QuestionResponse[][] = [];
   currentResponsesCount: number = 0;
   currentQuestionVotes: number = 0;
+  currentTimerState: TimerState = { bypass: false };
 
   /**
    * Creates a new Hilar game instance
@@ -104,7 +106,7 @@ export class Hilar extends Game<HilarPlayerData> {
     this.currentRoundStage = RoundStage.RESPOND;
 
     // Wait QUESTION_ANSWER_TIME ms to proceed to voting
-    await new Promise(resolve => setTimeout(resolve, QUESTION_ANSWER_TIME));
+    await createBypassableWait(this.currentTimerState, QUESTION_ANSWER_TIME, true);
 
     this.currentRoundStage = RoundStage.LOAD;
 
@@ -125,7 +127,7 @@ export class Hilar extends Game<HilarPlayerData> {
       // If there aren't any responses
       if (qResp.length === 0) {
         this.sendAll('hilarNoResponses');
-        await new Promise(resolve => setTimeout(resolve, RESULT_DISPLAY_TIME));
+        await createWait(RESULT_DISPLAY_TIME);
         continue;
       }
       if (qResp.length === 1) {
@@ -133,7 +135,7 @@ export class Hilar extends Game<HilarPlayerData> {
           prompt: q,
           winner: qResp[0].userId,
         });
-        await new Promise(resolve => setTimeout(resolve, RESULT_DISPLAY_TIME));
+        await createWait(RESULT_DISPLAY_TIME);
         continue;
       }
 
@@ -170,7 +172,7 @@ export class Hilar extends Game<HilarPlayerData> {
       this.currentRoundStage = RoundStage.VOTE;
 
       // Wait VOTE_TIME ms to proceed to results
-      await new Promise(resolve => setTimeout(resolve, VOTE_TIME));
+      await createBypassableWait(this.currentTimerState, VOTE_TIME, true);
 
       this.currentRoundStage = RoundStage.LOAD;
 
@@ -230,7 +232,7 @@ export class Hilar extends Game<HilarPlayerData> {
       this.currentRoundStage = RoundStage.RESULTS;
 
       // Wait RESULT_DISPLAY_TIME ms to proceed to next question
-      await new Promise(resolve => setTimeout(resolve, RESULT_DISPLAY_TIME));
+      await createWait(RESULT_DISPLAY_TIME);
     }
 
     this.currentRoundStage = RoundStage.LEADERBOARD;
@@ -248,7 +250,7 @@ export class Hilar extends Game<HilarPlayerData> {
     });
 
     // Wait RESULT_DISPLAY_TIME ms to proceed to next round
-    await new Promise(resolve => setTimeout(resolve, LEADERBOARD_TIME));
+    await createWait(LEADERBOARD_TIME);
 
     return true;
   }
@@ -335,7 +337,8 @@ export class Hilar extends Game<HilarPlayerData> {
 
     this.currentResponsesCount++;
     if (this.currentResponsesCount >= (this.players.size * 2)) {
-      // TODO: Trigger round advancement and reset this variable later
+      // Bypass the round wait
+      this.currentTimerState.bypass = true;
     }
   }
 

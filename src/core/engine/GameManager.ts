@@ -13,7 +13,7 @@ export const availableGames = [
 ];
 
 // The time players have between creating a game and starting it before the room is closed
-const GAME_JOIN_TIMEOUT = 5 * 60 * 1000;
+const GAME_JOIN_TIMEOUT = 10 * 60 * 1000;
 
 export class GameManager {
   activeGames: Map<string, Game<BasePlayerData>> = new Map();
@@ -168,6 +168,8 @@ export class GameManager {
         game.sendAll('gameError', {
           message: `Not enough players in the game at timeout. Need ${game.gameConfig.minPlayers}, have ${game.players.size}.`,
         });
+        // Log to the debug log that the game failed
+        logger.debug(`Game ${game.joinCode} (type ${game.gameConfig.gameId}) failed due to timeout.`)
         // Cancel the game
         this.destroyGame(joinCode);
         return;

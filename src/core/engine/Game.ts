@@ -131,11 +131,11 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
    * Adds handlers for all players in the game
    */
   addAllHandlers() {
-    for (const p of this.players) {
+    for (const [uid, p] of this.players.entries()) {
       // Get the client associated with the player and call addHandlers for that client
-      const client = this.getClient(p[0]);
+      const client = this.getClient(uid);
       if (!client) continue;
-      this.addHandlers(p[0], client);
+      this.addHandlers(uid, client);
     }
   }
 
