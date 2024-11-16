@@ -240,7 +240,7 @@ export class Hilar extends Game<HilarPlayerData> {
     // Send the round leaderboard to the players
     this.sendAll('hilarLeaderboard', {
       // Get the standings of the players sorted highest score first in format { userId: string, score: number }[]
-      standings: Array.from(this.players.entries()).sort((a, b) => a[1].score - b[1].score).map(p => {
+      standings: Array.from(this.players.entries()).sort((a, b) => b[1].score - a[1].score).map(p => {
         return {
           userId: p[0],
           displayName: p[1].displayName,
