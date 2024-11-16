@@ -11,8 +11,8 @@ const questionSetUnfriendly = fs.readFileSync(path.join(dataFolderPath, 'hilar',
 
 const QUESTION_ANSWER_TIME = 60 * 1000;
 const VOTE_TIME = 10 * 1000;
-const RESULT_DISPLAY_TIME = 3 * 1000;
-const LEADERBOARD_TIME = 5 * 1000;
+const RESULT_DISPLAY_TIME = 6 * 1000;
+const LEADERBOARD_TIME = 10 * 1000;
 
 const POINTS_PER_RESPONSE = 50;
 const ROUND_BONUS_POINTS = 50;

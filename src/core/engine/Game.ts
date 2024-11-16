@@ -78,17 +78,6 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
     const p = this.players.get(userId);
     if (!p) return;
     p.displayName = displayName;
-
-    const players = [];
-    for (const [userId, userData] of this.players) {
-      players.push({
-        userId, displayName: userData.displayName
-      });
-    }
-    // Broadcast the new list of players
-    this.sendAll('gamePlayers', {
-      players,
-    });
   }
 
   /**
@@ -99,6 +88,22 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
     if (this.players.has(userId)) {
       this.players.delete(userId);
     }
+  }
+
+  /**
+   * Sends the new list of players in the game to a client
+   */
+  broadcastPlayers(): void {
+    const players = [];
+    for (const [userId, userData] of this.players) {
+      players.push({
+        userId, displayName: userData.displayName
+      });
+    }
+    // Broadcast the new list of players
+    this.sendAll('gamePlayers', {
+      players,
+    });
   }
 
   /**

@@ -69,6 +69,8 @@ export class GameManager {
       isHost: isHost || false,
     });
 
+    game.broadcastPlayers();
+
     return true;
   }
 
@@ -162,21 +164,31 @@ export class GameManager {
       // If the game has already begun, do nothing
       if (game.hasBegun) return;
 
-      // If there aren't enough players
-      if (game.players.size < game.gameConfig.minPlayers) {
-        // Don't start the game
-        game.sendAll('gameError', {
-          message: `Not enough players in the game at timeout. Need ${game.gameConfig.minPlayers}, have ${game.players.size}.`,
-        });
-        // Log to the debug log that the game failed
-        logger.debug(`Game ${game.joinCode} (type ${game.gameConfig.gameId}) failed due to timeout.`)
-        // Cancel the game
-        this.destroyGame(joinCode);
-        return;
-      }
+      // Don't start the game
+      game.sendAll('gameError', {
+        message: `Game timed out: admin didn't start the game before the ${GAME_JOIN_TIMEOUT / (60 * 1000)} minute time limit expired.`,
+      });
+      // Log to the debug log that the game failed
+      logger.debug(`Game ${game.joinCode} (type ${game.gameConfig.gameId}) failed due to timeout.`)
+      // Cancel the game
+      this.destroyGame(joinCode);
+      return;
+
+      // // If there aren't enough players
+      // if (game.players.size < game.gameConfig.minPlayers) {
+      //   // Don't start the game
+      //   game.sendAll('gameError', {
+      //     message: `Not enough players in the game at timeout. Need ${game.gameConfig.minPlayers}, have ${game.players.size}.`,
+      //   });
+      //   // Log to the debug log that the game failed
+      //   logger.debug(`Game ${game.joinCode} (type ${game.gameConfig.gameId}) failed due to timeout.`)
+      //   // Cancel the game
+      //   this.destroyGame(joinCode);
+      //   return;
+      // }
       
-      // Start the game with the current number of players
-      game.beginGame();
+      // // Start the game with the current number of players
+      // game.beginGame();
     }, GAME_JOIN_TIMEOUT);
 
     return true;
