@@ -5,7 +5,9 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "prod": "node dist/index.js",
+    "quickstart-prod": "intsall && build && prod"
   },
   "repository": {
     "type": "git",
