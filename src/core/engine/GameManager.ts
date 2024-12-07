@@ -1,6 +1,7 @@
 import { BasePlayerData, Game } from './Game';
 
 import { Hilar, HILAR_GAME_CONFIG } from './games/Hilar';
+import { Duel, DUEL_GAME_CONFIG } from './games/Duel';
 
 import { logger } from '../../utils/logger';
 import { JoinCodeGenerator } from './JoinCodeGenerator';
@@ -10,6 +11,7 @@ import { SocketServer } from '../live/SocketServer';
 // The available games to play (must be hard-coded to avoid janky for-loop file imports)
 export const availableGames = [
   HILAR_GAME_CONFIG.friendlyName,
+  DUEL_GAME_CONFIG.friendlyName,
 ];
 
 // The time players have between creating a game and starting it before the room is closed
@@ -138,6 +140,9 @@ export class GameManager {
     // Select the game from the available games
     if (gameId === 'HILAR') {
       game = new Hilar(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id));
+    }
+    else if (gameId === 'DUEL') {
+      game = new Duel(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id));
     }
     else {
       creator.socket.emit('gameError', {

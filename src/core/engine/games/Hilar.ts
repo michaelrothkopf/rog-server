@@ -5,7 +5,7 @@ import path from 'path';
 import { SocketServer } from '../../live/SocketServer';
 import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
-import { createBypassableWait, createWait, TimerState } from '../wait';
+import { createPassableWait, createWait, TimerState } from '../wait';
 
 const questionSetUnfriendly = fs.readFileSync(path.join(dataFolderPath, 'hilar', 'QS1U.txt')).toString().split(/\r?\n/);
 
@@ -66,7 +66,7 @@ export class Hilar extends Game<HilarPlayerData> {
   currentQuestionResponses: QuestionResponse[][] = [];
   currentResponsesCount: number = 0;
   currentQuestionVotes: number = 0;
-  currentTimerState: TimerState = { bypass: false };
+  currentTimerState: TimerState = { pass: false };
 
   /**
    * Creates a new Hilar game instance
@@ -106,7 +106,7 @@ export class Hilar extends Game<HilarPlayerData> {
     this.currentRoundStage = RoundStage.RESPOND;
 
     // Wait QUESTION_ANSWER_TIME ms to proceed to voting
-    await createBypassableWait(this.currentTimerState, QUESTION_ANSWER_TIME, true);
+    await createPassableWait(this.currentTimerState, QUESTION_ANSWER_TIME, true);
 
     this.currentRoundStage = RoundStage.LOAD;
 
@@ -172,7 +172,7 @@ export class Hilar extends Game<HilarPlayerData> {
       this.currentRoundStage = RoundStage.VOTE;
 
       // Wait VOTE_TIME ms to proceed to results
-      await createBypassableWait(this.currentTimerState, VOTE_TIME, true);
+      await createPassableWait(this.currentTimerState, VOTE_TIME, true);
 
       this.currentRoundStage = RoundStage.LOAD;
 
@@ -337,8 +337,8 @@ export class Hilar extends Game<HilarPlayerData> {
 
     this.currentResponsesCount++;
     if (this.currentResponsesCount >= (this.players.size * 2)) {
-      // Bypass the round wait
-      this.currentTimerState.bypass = true;
+      // Pass the round wait
+      this.currentTimerState.pass = true;
     }
   }
 
