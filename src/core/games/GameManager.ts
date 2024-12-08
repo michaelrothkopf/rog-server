@@ -1,7 +1,7 @@
 import { BasePlayerData, Game } from './Game';
 
-import { Hilar, HILAR_GAME_CONFIG } from './games/Hilar';
-import { Duel, DUEL_GAME_CONFIG } from './games/Duel';
+import { Hilar, HILAR_GAME_CONFIG } from './modules/Hilar';
+import { Duel, DUEL_GAME_CONFIG } from './modules/Duel';
 
 import { logger } from '../../utils/logger';
 import { JoinCodeGenerator } from './JoinCodeGenerator';

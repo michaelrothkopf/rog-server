@@ -3,6 +3,7 @@ import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
 import { createPassableWait, createWait, createWaitUntil, TimerState } from '../wait';
 import { polyline } from 'lineclip';
+import { clamp } from '../utils';
 
 // The current round stage
 enum RoundStage {
@@ -31,6 +32,10 @@ const MOVE_DELAY = 10; // in ms
 // Map parameters
 const MAP_W = 500;
 const MAP_H = 500;
+const MIN_X_POS = 0 + HITBOX_W / 2;
+const MAX_X_POS = MAP_W - HITBOX_W / 2;
+const MIN_Y_POS = 0 + HITBOX_H / 2;
+const MAX_Y_POS = MAP_H - HITBOX_H / 2;
 const SPOS_2 = [[125, 250], [375, 250]];
 const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
 
@@ -232,15 +237,15 @@ export class Duel extends Game<DuelPlayerData> {
       return;
     }
 
-    // Move the player based on the direction
+    // Move the player based on the direction, clamping to map edges
     if (direction === 'up') {
-      player.yPos -= MOVE_DISTANCE;
+      player.yPos = clamp(player.yPos + MOVE_DISTANCE, MIN_Y_POS, MAX_Y_POS);
     } else if (direction === 'down') {
-      player.yPos += MOVE_DISTANCE;
+      player.yPos = clamp(player.yPos - MOVE_DISTANCE, MIN_Y_POS, MAX_Y_POS);
     } else if (direction === 'left') {
-      player.xPos -= MOVE_DISTANCE;
+      player.xPos = clamp(player.xPos - MOVE_DISTANCE, MIN_X_POS, MAX_X_POS);
     } else if (direction === 'right') {
-      player.xPos += MOVE_DISTANCE;
+      player.xPos = clamp(player.xPos + MOVE_DISTANCE, MIN_X_POS, MAX_X_POS);
     }
 
     // Send the state update
