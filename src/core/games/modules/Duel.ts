@@ -201,8 +201,8 @@ export class Duel extends Game<DuelPlayerData> {
 
     // Send clients the ready state
     this.sendAll('duelReadyState', {
-      playerName: player.displayName,
-      allReady: this.allReady,
+      readyState: this.getReadyState(),
+      allReady: this.allReady.pass,
     });
   }
 
@@ -372,6 +372,19 @@ export class Duel extends Game<DuelPlayerData> {
       if (!p.ready) return false;
     }
     return true;
+  }
+
+  /**
+   * Gets the table of players who are ready
+   */
+  getReadyState() {
+    const result = [];
+    for (const [userId, p] of this.players) {
+      result.push({
+        userId, ready: p.ready
+      });
+    }
+    return result;
   }
 
   checkWinner(): string | null {
