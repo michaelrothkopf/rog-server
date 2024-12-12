@@ -2,8 +2,8 @@ import { dataFolderPath, Game, BasePlayerData, GameConfig } from '../Game';
 import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
 import { createPassableWait, createWait, createWaitUntil, TimerState } from '../wait';
-import { polyline } from 'lineclip';
 import { clamp } from '../utils';
+import { Circle, System } from 'detect-collisions';
 
 // The current round stage
 enum RoundStage {
@@ -22,20 +22,15 @@ const SHOT_DELAY = 100; // in ms
 const SHOT_RANGE = 10;
 
 // Size of the player hitbox (rectangular, centered around (xPos, yPos))
-const HITBOX_W = 10;
-const HITBOX_H = 10;
+const PLAYER_RADIUS = 10;
 
 // Movement parameters
-const MOVE_DISTANCE = 3;
+const PLAYER_VELOCITY = 3;
 const MOVE_DELAY = 10; // in ms
 
 // Map parameters
 const MAP_W = 500;
 const MAP_H = 500;
-const MIN_X_POS = 0 + HITBOX_W / 2;
-const MAX_X_POS = MAP_W - HITBOX_W / 2;
-const MIN_Y_POS = 0 + HITBOX_H / 2;
-const MAX_Y_POS = MAP_H - HITBOX_H / 2;
 const SPOS_2 = [[125, 250], [375, 250]];
 const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
 
@@ -55,6 +50,7 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
     yPos: 0,
     lastMove: Date.now(),
     lastShot: Date.now(),
+    physicsBody: new Circle({ x: 0, y: 0 }, 0),
 
     numShots: 0,
     numHits: 0,
@@ -70,6 +66,7 @@ export interface DuelPlayerData extends BasePlayerData {
   yPos: number;
   lastMove: number;
   lastShot: number;
+  physicsBody: Circle;
 
   // Multiround statistics
   numShots: number;
@@ -83,6 +80,7 @@ export class Duel extends Game<DuelPlayerData> {
   allReady: TimerState = { pass: false };
   roundOver: TimerState = { pass: false };
   winner: string = '';
+  collisionSystem: System;
   
   /**
    * Creates a new Duel game instance
@@ -92,6 +90,9 @@ export class Duel extends Game<DuelPlayerData> {
    */
   constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined) {
     super(joinCode, creatorId, DUEL_GAME_CONFIG, getClient);
+
+    // Create the empty collision system
+    this.collisionSystem = new System();
   }
 
   async onBegin() {
@@ -111,6 +112,7 @@ export class Duel extends Game<DuelPlayerData> {
     this.allReady = { pass: false };
     this.roundOver = { pass: false };
     for (const p of this.players.values()) { p.ready = false; }
+    this.collisionSystem = new System();
 
     // Broadcast the menu
     this.sendAll('duelMenu', {
@@ -124,6 +126,7 @@ export class Duel extends Game<DuelPlayerData> {
     // Start the round
     this.sendAll('duelBegin');
     this.currentRoundStage = RoundStage.BATTLE;
+    this.updateAllStates();
     // Wait until the round is over
     await createWaitUntil(this.roundOver);
 
@@ -237,16 +240,23 @@ export class Duel extends Game<DuelPlayerData> {
       return;
     }
 
-    // Move the player based on the direction, clamping to map edges
-    if (direction === 'up') {
-      player.yPos = clamp(player.yPos + MOVE_DISTANCE, MIN_Y_POS, MAX_Y_POS);
-    } else if (direction === 'down') {
-      player.yPos = clamp(player.yPos - MOVE_DISTANCE, MIN_Y_POS, MAX_Y_POS);
+    // Change the player's angle based on the direction
+    if (direction === 'right') {
+      player.physicsBody.setAngle(0);
+    } else if (direction === 'up') {
+      player.physicsBody.setAngle(Math.PI / 2);
     } else if (direction === 'left') {
-      player.xPos = clamp(player.xPos - MOVE_DISTANCE, MIN_X_POS, MAX_X_POS);
-    } else if (direction === 'right') {
-      player.xPos = clamp(player.xPos + MOVE_DISTANCE, MIN_X_POS, MAX_X_POS);
+      player.physicsBody.setAngle(Math.PI);
+    } else if (direction === 'down') {
+      player.physicsBody.setAngle(Math.PI * 1.5);
     }
+    // Move the player in the specified direction
+    player.physicsBody.move(PLAYER_VELOCITY);
+    // Prevent moving through other objects
+    this.collisionSystem.separate();
+    // Set the player's position to the physicsBody position
+    player.xPos = player.physicsBody.x;
+    player.yPos = player.physicsBody.y;
 
     // Send the state update
     this.sendStateUpdate(userId, player);
@@ -256,7 +266,7 @@ export class Duel extends Game<DuelPlayerData> {
    * Shoots in a specific direction
    * @param userId The user ID of the user
    * @param client The client object for the user
-   * @param payload Contains { direction: string } with movement direction
+   * @param payload Contains { direction: number } with shot direction in radians
    */
   handlePlayerShot(userId: string, client: SocketClient, payload: any) {
     // If the player is not in the game
@@ -286,14 +296,12 @@ export class Duel extends Game<DuelPlayerData> {
     // Increase the shot statistic
     player.numShots++;
 
-    let didHit = false;
-    // Get the collision list
-    for (const targetId of this.getCollidingPlayers(player.xPos, player.yPos, direction)) {
-      if (targetId === userId) continue;
-
-      // The player has hit someone
-      didHit = true;
-      const target = this.players.get(targetId);
+    // Fire the shot and get the resulting userId
+    const hit = this.fireShot(player.xPos, player.yPos, direction);
+    // If the shot hit someone
+    if (hit) {
+      // Get the target Player
+      const target = this.players.get(hit);
       if (!target) return;
       // Take damage
       target.health = Math.max(0, target.health - SHOT_DAMAGE);
@@ -301,8 +309,8 @@ export class Duel extends Game<DuelPlayerData> {
       // Increase the hit statistic
       player.numHits++;
 
-      // Update the clients
-      this.sendStateUpdate(targetId, target);
+      // Update the clients to the new health
+      this.sendStateUpdate(hit, target);
     }
 
     // Send the player shot update
@@ -311,7 +319,7 @@ export class Duel extends Game<DuelPlayerData> {
       xPos: player.xPos,
       yPos: player.yPos,
       direction,
-      didHit,
+      hit,
     });
 
     // If someone has now won the game
@@ -333,7 +341,7 @@ export class Duel extends Game<DuelPlayerData> {
     const sPosList = this.players.size === 2 ? SPOS_2 : SPOS_4;
 
     // For each player
-    for (const p of this.players.values()) {
+    for (const [uid, p] of this.players) {
       // Set the player's position
       const pos = sPosList.pop();
       if (!pos) return;
@@ -342,6 +350,13 @@ export class Duel extends Game<DuelPlayerData> {
 
       // Set the player's health
       p.health = STARTING_HEALTH;
+
+      // Create the player's body
+      p.physicsBody = this.collisionSystem.createCircle({ x: pos[0], y: pos[1] }, PLAYER_RADIUS, {
+        userData: {
+          userId: uid,
+        }
+      });
     }
   }
 
@@ -356,7 +371,7 @@ export class Duel extends Game<DuelPlayerData> {
    * Updates the state for a given player
    */
   sendStateUpdate(userId: string, player: DuelPlayerData) {
-    this.sendAll('duelState', {
+    this.sendAll('duelPlayerState', {
       userId,
       xPos: player.xPos,
       yPos: player.yPos,
@@ -404,36 +419,28 @@ export class Duel extends Game<DuelPlayerData> {
 
   /**
    * Detects shot collisions with players
-   * @param x The x position of the shot's origin
-   * @param y The y position of the shot's origin
+   * @param x The x position of the player
+   * @param y The y position of the player
    * @param direction The direction of the shot in radians
-   * @returns A list of userId values containing each player hit
+   * @returns The userId of the player that was hit or null
    */
-  getCollidingPlayers(x: number, y: number, direction: number): string[] {
-    // List of players colliding
-    const result: string[] = [];
-
+  fireShot(x: number, y: number, direction: number): string | null {
+    // Set the shot starting position to just outside the player's bounding box
+    const startX = x + PLAYER_RADIUS * 1.1 * Math.cos(direction);
+    const startY = y + PLAYER_RADIUS * 1.1 * Math.sin(direction);
     // Get the shot endpoints
     const endX = x + SHOT_RANGE * Math.cos(direction);
     const endY = y + SHOT_RANGE * Math.sin(direction);
 
-    // For each player
-    for (const [userId, p] of this.players) {
-      // List of points where the line intersects the player's hitbox
-      const cr = polyline(
-        // The line segment points for the shot
-        [[x, y], [endX, endY]],
-        // The player's hitbox bounds
-        [p.xPos - HITBOX_W / 2, p.yPos - HITBOX_H / 2, p.xPos + HITBOX_W / 2, p.yPos + HITBOX_H / 2],
-      );
-      // If the shot collides
-      if (cr.length > 0) {
-        // Add the player to the collision list
-        result.push(userId);
-      }
-    }
+    // Get the raycast collision result
+    const hit = this.collisionSystem.raycast(
+      { x: startX, y: startY },
+      { x: endX, y: endY },
+      (body, ray) => ('userId' in body.userData),
+    );
 
-    return result;
+    if (!hit) return null;
+    return hit.body.userData.userId;
   }
 
   /**
