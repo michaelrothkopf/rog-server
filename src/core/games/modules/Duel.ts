@@ -151,7 +151,9 @@ export class Duel extends Game<DuelPlayerData> {
   addHandlers(userId: string, client: SocketClient): void {
     // When the player readies up
     client.socket.on('duelReady', () => {
+      logger.debug('ready up')
       if (this.currentRoundStage === RoundStage.MENU) {
+        logger.debug('menu screen')
         this.handleReadyUp(userId, client);
       } else {
         client.socket.emit('gameError', {
@@ -200,6 +202,7 @@ export class Duel extends Game<DuelPlayerData> {
    * @param client The client object for the user
    */
   handleReadyUp(userId: string, client: SocketClient) {
+    logger.debug('handling ready')
     // If the player is not in the game
     const player = this.players.get(userId);
     if (!player) {
@@ -209,12 +212,15 @@ export class Duel extends Game<DuelPlayerData> {
       return;
     }
 
+    logger.debug('marking as reayd')
+
     // Mark the player as ready
     player.ready = true;
 
     // Update the ready state
     this.allReady.pass = this.checkReady();
 
+    logger.debug('sending ready state')
     // Send clients the ready state
     this.sendAll('duelReadyState', {
       readyState: this.getReadyState(),
@@ -240,7 +246,7 @@ export class Duel extends Game<DuelPlayerData> {
 
     // If the player can't move again yet
     if (Date.now() - player.lastMove < MOVE_DELAY) {
-      console.log('player move spam');
+      logger.debug('player move spam');
       return;
     }
     player.lastMove = Date.now();
