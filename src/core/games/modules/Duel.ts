@@ -48,6 +48,7 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
     health: STARTING_HEALTH,
     xPos: 0,
     yPos: 0,
+    aimAngle: 0,
     lastMove: Date.now(),
     lastShot: Date.now(),
     physicsBody: new Circle({ x: 0, y: 0 }, 0),
@@ -64,6 +65,7 @@ export interface DuelPlayerData extends BasePlayerData {
   health: number;
   xPos: number;
   yPos: number;
+  aimAngle: number;
   lastMove: number;
   lastShot: number;
   physicsBody: Circle;
@@ -169,10 +171,21 @@ export class Duel extends Game<DuelPlayerData> {
       }
     });
 
-    // When the player moves
+    // When the player shoots
     client.socket.on('duelShoot', (payload) => {
       if (this.currentRoundStage === RoundStage.BATTLE) {
-        this.handlePlayerMovement(userId, client, payload);
+        this.handlePlayerShoot(userId, client, payload);
+      } else {
+        client.socket.emit('gameError', {
+          message: 'Client error: game not currently active',
+        });
+      }
+    });
+
+    // When the player aims
+    client.socket.on('duelAim', (payload) => {
+      if (this.currentRoundStage === RoundStage.BATTLE) {
+        this.handlePlayerAim(userId, client, payload);
       } else {
         client.socket.emit('gameError', {
           message: 'Client error: game not currently active',
@@ -227,6 +240,7 @@ export class Duel extends Game<DuelPlayerData> {
 
     // If the player can't move again yet
     if (Date.now() - player.lastMove < MOVE_DELAY) {
+      console.log('player move spam');
       return;
     }
     player.lastMove = Date.now();
@@ -268,7 +282,7 @@ export class Duel extends Game<DuelPlayerData> {
    * @param client The client object for the user
    * @param payload Contains { direction: number } with shot direction in radians
    */
-  handlePlayerShot(userId: string, client: SocketClient, payload: any) {
+  handlePlayerShoot(userId: string, client: SocketClient, payload: any) {
     // If the player is not in the game
     const player = this.players.get(userId);
     if (!player) {
@@ -334,6 +348,37 @@ export class Duel extends Game<DuelPlayerData> {
   }
 
   /**
+   * Aims a player's gun in a specific direction
+   * @param userId The user ID of the user
+   * @param client The client object for the user
+   * @param payload Contains { direction: number } with the aim direction in radians
+   */
+  handlePlayerAim(userId: string, client: SocketClient, payload: any) {
+    // If the player is not in the game
+    const player = this.players.get(userId);
+    if (!player) {
+      client.socket.emit('gameError', {
+        message: 'Cannot process response because you have been removed from the game.',
+      });
+      return;
+    }
+
+    // If the direction is invalid
+    const direction = payload.direction;
+    if (!direction || (typeof direction !== 'number')) {
+      client.socket.emit('gameError', {
+        message: 'Invalid direction specified.',
+      });
+      return;
+    }
+
+    player.aimAngle = payload.direction;
+
+    // Send the state update
+    this.sendStateUpdate(userId, player);
+  }
+
+  /**
    * Updates the players' data for the beginning of a duel
    */
   initializeDuel() {
@@ -376,7 +421,8 @@ export class Duel extends Game<DuelPlayerData> {
       xPos: player.xPos,
       yPos: player.yPos,
       health: player.health,
-    });
+      aimAngle: player.aimAngle,
+    }); 
   }
 
   /**
