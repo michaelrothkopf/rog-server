@@ -13,7 +13,7 @@ enum RoundStage {
 }
 
 // Game constants
-const RESULTS_DELAY = 2000; // in ms
+const RESULTS_DELAY = 5000; // in ms
 const STARTING_HEALTH = 100;
 
 // Shot parameters
@@ -30,10 +30,15 @@ const PLAYER_VELOCITY = 3;
 const MOVE_DELAY = 10; // in ms
 
 // Map parameters
-const MAP_W = 500;
-const MAP_H = 500;
-const SPOS_2 = [[125, 250], [375, 250]];
-const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
+const MAP_W = 750;
+const MAP_H = 750;
+const SPOS_2 = [[MAP_W * 0.25, MAP_H * 0.5], [MAP_W * 0.75, MAP_H * 0.5]];
+const SPOS_4 = [
+  [MAP_W * 0.25, MAP_H * 0.25],
+  [MAP_W * 0.25, MAP_H * 0.75],
+  [MAP_W * 0.75, MAP_H * 0.25],
+  [MAP_W * 0.75, MAP_H * 0.75],
+];
 
 export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
   gameId: 'DUEL',
@@ -267,7 +272,10 @@ export class Duel extends Game<DuelPlayerData> {
     // Set the angle based on the movement vector
     player.physicsBody.setAngle(Math.atan2(mvy, mvx));
     // Move the player in the specified direction
-    player.physicsBody.move(PLAYER_VELOCITY);
+    player.physicsBody.setPosition(
+      player.physicsBody.pos.x + PLAYER_VELOCITY * Math.cos(player.physicsBody.angle),
+      player.physicsBody.pos.y + PLAYER_VELOCITY * Math.sin(player.physicsBody.angle),
+    );
     // Prevent moving through other objects
     this.collisionSystem.separate();
 
