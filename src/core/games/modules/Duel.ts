@@ -19,10 +19,11 @@ const STARTING_HEALTH = 100;
 // Shot parameters
 const SHOT_DAMAGE = 8;
 const SHOT_DELAY = 100; // in ms
-const SHOT_RANGE = 10;
+const SHOT_RANGE = 500;
 
 // Size of the player hitbox (rectangular, centered around (xPos, yPos))
 const PLAYER_RADIUS = 10;
+const SHOT_PADDING_MULTIPLIER = 1.02;
 
 // Movement parameters
 const PLAYER_VELOCITY = 3;
@@ -31,7 +32,9 @@ const MOVE_DELAY = 10; // in ms
 // Map parameters
 const MAP_W = 500;
 const MAP_H = 500;
-const SPOS_2 = [[125, 250], [375, 250]];
+// const SPOS_2 = [[125, 250], [375, 250]];
+// const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
+const SPOS_2 = [[0, 0], [0, 250]];
 const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
 
 export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
@@ -46,8 +49,6 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
   
     ready: false,
     health: STARTING_HEALTH,
-    xPos: 0,
-    yPos: 0,
     aimAngle: 0,
     lastMove: Date.now(),
     lastShot: Date.now(),
@@ -63,8 +64,6 @@ export interface DuelPlayerData extends BasePlayerData {
   // Individual round player properties
   ready: boolean;
   health: number;
-  xPos: number;
-  yPos: number;
   aimAngle: number;
   lastMove: number;
   lastShot: number;
@@ -151,9 +150,7 @@ export class Duel extends Game<DuelPlayerData> {
   addHandlers(userId: string, client: SocketClient): void {
     // When the player readies up
     client.socket.on('duelReady', () => {
-      logger.debug('ready up')
       if (this.currentRoundStage === RoundStage.MENU) {
-        logger.debug('menu screen')
         this.handleReadyUp(userId, client);
       } else {
         client.socket.emit('gameError', {
@@ -202,7 +199,6 @@ export class Duel extends Game<DuelPlayerData> {
    * @param client The client object for the user
    */
   handleReadyUp(userId: string, client: SocketClient) {
-    logger.debug('handling ready')
     // If the player is not in the game
     const player = this.players.get(userId);
     if (!player) {
@@ -212,15 +208,12 @@ export class Duel extends Game<DuelPlayerData> {
       return;
     }
 
-    logger.debug('marking as reayd')
-
     // Mark the player as ready
     player.ready = true;
 
     // Update the ready state
     this.allReady.pass = this.checkReady();
 
-    logger.debug('sending ready state')
     // Send clients the ready state
     this.sendAll('duelReadyState', {
       readyState: this.getReadyState(),
@@ -246,7 +239,6 @@ export class Duel extends Game<DuelPlayerData> {
 
     // If the player can't move again yet
     if (Date.now() - player.lastMove < MOVE_DELAY) {
-      logger.debug('player move spam');
       return;
     }
     player.lastMove = Date.now();
@@ -274,9 +266,6 @@ export class Duel extends Game<DuelPlayerData> {
     player.physicsBody.move(PLAYER_VELOCITY);
     // Prevent moving through other objects
     this.collisionSystem.separate();
-    // Set the player's position to the physicsBody position
-    player.xPos = player.physicsBody.x;
-    player.yPos = player.physicsBody.y;
 
     // Send the state update
     this.sendStateUpdate(userId, player);
@@ -306,9 +295,9 @@ export class Duel extends Game<DuelPlayerData> {
 
     // If the direction is invalid
     const direction = payload.direction;
-    if (!direction || (typeof direction !== 'number')) {
+    if (typeof direction !== 'number') {
       client.socket.emit('gameError', {
-        message: 'Invalid direction specified.',
+        message: 'Invalid aim direction specified. ' + direction,
       });
       return;
     }
@@ -317,11 +306,25 @@ export class Duel extends Game<DuelPlayerData> {
     player.numShots++;
 
     // Fire the shot and get the resulting userId
-    const hit = this.fireShot(player.xPos, player.yPos, direction);
+    // Set the shot starting position to just outside the player's bounding box
+    const startX = player.physicsBody.x + PLAYER_RADIUS * SHOT_PADDING_MULTIPLIER * Math.cos(direction);
+    const startY = player.physicsBody.y - PLAYER_RADIUS * SHOT_PADDING_MULTIPLIER * Math.sin(direction);
+    // Get the shot endpoints
+    const endX = startX + SHOT_RANGE * Math.cos(direction);
+    const endY = startY - SHOT_RANGE * Math.sin(direction);
+
+    // logger.debug(`Shot fired: position: (${player.physicsBody.x}, ${player.physicsBody.y}), direction: ${direction} rad (${direction * 180 / Math.PI} deg), start: (${startX}, ${startY}), end: (${endX}, ${endY})`);
+
+    // Get the raycast collision result
+    const hit = this.collisionSystem.raycast(
+      { x: startX, y: startY },
+      { x: endX, y: endY },
+      (body, ray) => ('userId' in body.userData),
+    );
     // If the shot hit someone
     if (hit) {
       // Get the target Player
-      const target = this.players.get(hit);
+      const target = this.players.get(hit.body.userData.userId);
       if (!target) return;
       // Take damage
       target.health = Math.max(0, target.health - SHOT_DAMAGE);
@@ -330,16 +333,15 @@ export class Duel extends Game<DuelPlayerData> {
       player.numHits++;
 
       // Update the clients to the new health
-      this.sendStateUpdate(hit, target);
+      this.sendStateUpdate(hit.body.userData.userId, target);
     }
 
     // Send the player shot update
     this.sendAll('duelShot', {
       userId,
-      xPos: player.xPos,
-      yPos: player.yPos,
+      startX, startY, endX, endY,
       direction,
-      hit,
+      hit: hit?.body.userData.userId || null,
     });
 
     // If someone has now won the game
@@ -371,9 +373,9 @@ export class Duel extends Game<DuelPlayerData> {
 
     // If the direction is invalid
     const direction = payload.direction;
-    if (!direction || (typeof direction !== 'number')) {
+    if (typeof direction !== 'number') {
       client.socket.emit('gameError', {
-        message: 'Invalid direction specified.',
+        message: 'Invalid aim direction specified. ' + direction,
       });
       return;
     }
@@ -396,8 +398,6 @@ export class Duel extends Game<DuelPlayerData> {
       // Set the player's position
       const pos = sPosList.pop();
       if (!pos) return;
-      p.xPos = pos[0];
-      p.yPos = pos[1];
 
       // Set the player's health
       p.health = STARTING_HEALTH;
@@ -424,8 +424,8 @@ export class Duel extends Game<DuelPlayerData> {
   sendStateUpdate(userId: string, player: DuelPlayerData) {
     this.sendAll('duelPlayerState', {
       userId,
-      xPos: player.xPos,
-      yPos: player.yPos,
+      xPos: player.physicsBody.x,
+      yPos: player.physicsBody.y,
       health: player.health,
       aimAngle: player.aimAngle,
     }); 
@@ -478,11 +478,13 @@ export class Duel extends Game<DuelPlayerData> {
    */
   fireShot(x: number, y: number, direction: number): string | null {
     // Set the shot starting position to just outside the player's bounding box
-    const startX = x + PLAYER_RADIUS * 1.1 * Math.cos(direction);
-    const startY = y + PLAYER_RADIUS * 1.1 * Math.sin(direction);
+    const startX = x + PLAYER_RADIUS * SHOT_PADDING_MULTIPLIER * Math.cos(direction);
+    const startY = y - PLAYER_RADIUS * SHOT_PADDING_MULTIPLIER * Math.sin(direction);
     // Get the shot endpoints
-    const endX = x + SHOT_RANGE * Math.cos(direction);
-    const endY = y + SHOT_RANGE * Math.sin(direction);
+    const endX = startX + SHOT_RANGE * Math.cos(direction);
+    const endY = startY - SHOT_RANGE * Math.sin(direction);
+
+    // logger.debug(`Shot fired: position: (${x}, ${y}), direction: ${direction} rad (${direction * 180 / Math.PI} deg), start: (${startX}, ${startY}), end: (${endX}, ${endY})`);
 
     // Get the raycast collision result
     const hit = this.collisionSystem.raycast(
