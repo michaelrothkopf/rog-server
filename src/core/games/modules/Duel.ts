@@ -3,7 +3,8 @@ import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
 import { createPassableWait, createWait, createWaitUntil, TimerState } from '../wait';
 import { clamp } from '../utils';
-import { Circle, System } from 'detect-collisions';
+import { Body, Circle, System } from 'detect-collisions';
+import { DuelMap, getRandomMap } from './duel/DuelMaps';
 
 // The current round stage
 enum RoundStage {
@@ -84,7 +85,10 @@ export class Duel extends Game<DuelPlayerData> {
   allReady: TimerState = { pass: false };
   roundOver: TimerState = { pass: false };
   winner: string = '';
+
   collisionSystem: System;
+  currentMap: DuelMap = getRandomMap();
+  walls: Body[] = [];
   
   /**
    * Creates a new Duel game instance
@@ -129,7 +133,9 @@ export class Duel extends Game<DuelPlayerData> {
     // Initialize the round
     this.initializeDuel();
     // Start the round
-    this.sendAll('duelBegin');
+    this.sendAll('duelBegin', {
+      walls: this.currentMap.polygons,
+    });
     this.currentRoundStage = RoundStage.BATTLE;
     this.updateAllStates();
     // Wait until the round is over
@@ -331,7 +337,7 @@ export class Duel extends Game<DuelPlayerData> {
     const hit = this.collisionSystem.raycast(
       { x: startX, y: startY },
       { x: endX, y: endY },
-      (body, ray) => ('userId' in body.userData),
+      (body, ray) => (body.userData && 'userId' in body.userData),
     );
     // If the shot hit someone
     if (hit) {
@@ -402,8 +408,11 @@ export class Duel extends Game<DuelPlayerData> {
    * Updates the players' data for the beginning of a duel
    */
   initializeDuel() {
+    // Get the map
+    this.initializeMap(getRandomMap());
+
     // Get the starting positions based on the number of players
-    const sPosList = [...(this.players.size === 2 ? SPOS_2 : SPOS_4)];
+    const sPosList = [...this.currentMap.spawnCoordinates];
 
     // For each player
     for (const [uid, p] of this.players) {
@@ -420,6 +429,34 @@ export class Duel extends Game<DuelPlayerData> {
           userId: uid,
         }
       });
+    }
+  }
+
+  /**
+   * Sets the local variables to match a map change
+   */
+  initializeMap(map: DuelMap) {
+    this.currentMap = map;
+
+    // Clear all the current walls
+    this.collisionSystem.clear();
+    this.walls = [];
+
+    // Populate the new walls
+    for (const polygon of map.polygons) {
+      // Convert the polygon coordinates to points
+      const points = [];
+      for (const pt of polygon) {
+        points.push({
+          x: pt[0],
+          y: pt[1],
+        });
+      }
+
+      // Create a polygon and add it
+      this.walls.push(this.collisionSystem.createPolygon({ x: 0, y: 0 }, points, {
+        isStatic: true,
+      }));
     }
   }
 
