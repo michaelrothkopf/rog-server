@@ -32,9 +32,7 @@ const MOVE_DELAY = 10; // in ms
 // Map parameters
 const MAP_W = 500;
 const MAP_H = 500;
-// const SPOS_2 = [[125, 250], [375, 250]];
-// const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
-const SPOS_2 = [[0, 0], [0, 250]];
+const SPOS_2 = [[125, 250], [375, 250]];
 const SPOS_4 = [[125, 125], [125, 375], [375, 125], [375, 375]];
 
 export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
@@ -119,6 +117,7 @@ export class Duel extends Game<DuelPlayerData> {
     this.sendAll('duelMenu', {
       stats: this.getStats(),
     });
+    this.sendReadyStateUpdate();
     // Wait until all players are ready
     await createWaitUntil(this.allReady);
 
@@ -215,17 +214,14 @@ export class Duel extends Game<DuelPlayerData> {
     this.allReady.pass = this.checkReady();
 
     // Send clients the ready state
-    this.sendAll('duelReadyState', {
-      readyState: this.getReadyState(),
-      allReady: this.allReady.pass,
-    });
+    this.sendReadyStateUpdate();
   }
 
   /**
    * Moves a player in a specific direction
    * @param userId The user ID of the user
    * @param client The client object for the user
-   * @param payload Contains { direction: string } with movement direction
+   * @param payload Contains { directions: string[] } with movement directions
    */
   handlePlayerMovement(userId: string, client: SocketClient, payload: any) {
     // If the player is not in the game
@@ -243,25 +239,33 @@ export class Duel extends Game<DuelPlayerData> {
     }
     player.lastMove = Date.now();
 
-    // If the direction is invalid
-    const direction = payload.direction;
-    if (!direction || (typeof direction !== 'string')) {
+    // If the directions are invalid
+    const directions = payload.directions;
+    if (!Array.isArray(directions) || directions.length < 1 || (typeof directions[0] !== 'string')) {
       client.socket.emit('gameError', {
-        message: 'Invalid direction specified.',
+        message: 'Invalid directions specified.',
       });
       return;
     }
 
-    // Change the player's angle based on the direction
-    if (direction === 'right') {
-      player.physicsBody.setAngle(0);
-    } else if (direction === 'up') {
-      player.physicsBody.setAngle(Math.PI / 2);
-    } else if (direction === 'left') {
-      player.physicsBody.setAngle(Math.PI);
-    } else if (direction === 'down') {
-      player.physicsBody.setAngle(Math.PI * 1.5);
+    // Create a movement vector
+    let mvx = 0;
+    let mvy = 0;
+    // Set the vector components based on the movement directionss
+    if (directions.includes('right')) {
+      mvx = 1;
     }
+    if (directions.includes('up')) {
+      mvy = 1;
+    }
+    if (directions.includes('left')) {
+      mvx = -1;
+    }
+    if (directions.includes('down')) {
+      mvy = -1;
+    }
+    // Set the angle based on the movement vector
+    player.physicsBody.setAngle(Math.atan2(mvy, mvx));
     // Move the player in the specified direction
     player.physicsBody.move(PLAYER_VELOCITY);
     // Prevent moving through other objects
@@ -391,7 +395,7 @@ export class Duel extends Game<DuelPlayerData> {
    */
   initializeDuel() {
     // Get the starting positions based on the number of players
-    const sPosList = this.players.size === 2 ? SPOS_2 : SPOS_4;
+    const sPosList = [...(this.players.size === 2 ? SPOS_2 : SPOS_4)];
 
     // For each player
     for (const [uid, p] of this.players) {
@@ -439,6 +443,16 @@ export class Duel extends Game<DuelPlayerData> {
       if (!p.ready) return false;
     }
     return true;
+  }
+
+  /**
+   * Sends a ready state update to all clients
+   */
+  sendReadyStateUpdate() {
+    this.sendAll('duelReadyState', {
+      readyState: this.getReadyState(),
+      allReady: this.allReady.pass,
+    });
   }
 
   /**
