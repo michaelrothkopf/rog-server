@@ -18,6 +18,7 @@ export const availableGames = [
 const GAME_JOIN_TIMEOUT = 10 * 60 * 1000;
 
 export class GameManager {
+  // Map of join codes to games
   activeGames: Map<string, Game<BasePlayerData>> = new Map();
 
   joinCodeGenerator: JoinCodeGenerator = new JoinCodeGenerator();
@@ -139,10 +140,10 @@ export class GameManager {
 
     // Select the game from the available games
     if (gameId === 'HILAR') {
-      game = new Hilar(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id));
+      game = new Hilar(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
     }
     else if (gameId === 'DUEL') {
-      game = new Duel(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id));
+      game = new Duel(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
     }
     else {
       creator.socket.emit('gameError', {
@@ -176,7 +177,7 @@ export class GameManager {
       // Log to the debug log that the game failed
       logger.debug(`Game ${game.joinCode} (type ${game.gameConfig.gameId}) failed due to timeout.`)
       // Cancel the game
-      this.destroyGame(joinCode);
+      this.endGame(joinCode);
       return;
 
       // // If there aren't enough players
@@ -203,7 +204,7 @@ export class GameManager {
    * Destroys a game
    * @param joinCode The join code of the game to destroy
    */
-  destroyGame(joinCode: string) {
+  endGame(joinCode: string) {
     logger.debug(`Deleted game ${joinCode}.`);
     
     // Attempt to fetch the game
@@ -216,6 +217,45 @@ export class GameManager {
     game.sendAll('gameEnd', {
       message: 'The game has ended.',
     });
+
+    // Delete the game
+    this.activeGames.delete(game.joinCode);
+  }
+
+  /**
+   * Voluntarily terminates a game
+   * @returns Whether the game was successfully terminated or not
+   */
+  async terminateGame(player: SocketClient): Promise<boolean> {
+    const game = this.getPlayerGame(player.user._id.toString());
+    // If the game doesn't exist
+    if (!game) {
+      // Send the player an error message
+      player.socket.emit('gameError', {
+        module: 'TERMINATE',
+        message: 'Game does not exist or player is not in a game',
+      });
+      return false;
+    }
+    // If the player is not the creator
+    if (game.creatorId !== player.user._id.toString()) {
+      // Send the player an error message
+      player.socket.emit('gameError', {
+        module: 'TERMINATE',
+        message: 'Player attempting to terminate game is not creator',
+      });
+      return false;
+    }
+
+    // Send the terminate message
+    game.sendAll('gameEnd', {
+      message: 'The host has terminated the game.',
+    });
+
+    // Delete the game
+    this.activeGames.delete(game.joinCode);
+
+    return true;
   }
 
   /**
@@ -236,8 +276,8 @@ export class GameManager {
    * @returns Whether the player is currently in a game
    */
   playerInGame(userId: string): boolean {
-    for (const game of this.activeGames) {
-      if (game[1].players.has(userId)) return true;
+    for (const game of this.activeGames.values()) {
+      if (game.players.has(userId)) return true;
     }
     return false;
   }

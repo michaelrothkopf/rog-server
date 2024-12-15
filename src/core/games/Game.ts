@@ -27,6 +27,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   creatorId: string;
 
   hasBegun: boolean;
+  end: () => void;
 
   /**
    * Creates a new abstract Game
@@ -35,7 +36,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
    * @param gameConfig The configuration for the game (constant across all instances of the same game)
    * @param getClient A function to get a client's SocketClient from the server
    */
-  constructor(joinCode: string, creatorId: string, gameConfig: GameConfig<T_PlayerData>, getClient: (id: string) => SocketClient | undefined) {
+  constructor(joinCode: string, creatorId: string, gameConfig: GameConfig<T_PlayerData>, getClient: (id: string) => SocketClient | undefined, end: () => void) {
     this.joinCode = joinCode;
     this.players = new Map();
     this.creatorId = creatorId;
@@ -45,6 +46,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
     this.getClient = getClient;
 
     this.hasBegun = false;
+    this.end = end;
   }
 
   async beginGame(): Promise<any> {

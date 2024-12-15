@@ -74,8 +74,8 @@ export class Hilar extends Game<HilarPlayerData> {
    * @param creatorId The user ID of the creator
    * @param getClient A function to get a client's SocketClient from the server
    */
-  constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined) {
-    super(joinCode, creatorId, HILAR_GAME_CONFIG, getClient);
+  constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined, end: () => void) {
+    super(joinCode, creatorId, HILAR_GAME_CONFIG, getClient, end);
   }
 
   async onBegin() {

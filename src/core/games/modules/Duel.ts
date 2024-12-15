@@ -1,7 +1,7 @@
 import { dataFolderPath, Game, BasePlayerData, GameConfig } from '../Game';
 import { logger } from '../../../utils/logger';
 import { SocketClient } from '../../live/SocketClient';
-import { createPassableWait, createWait, createWaitUntil, TimerState } from '../wait';
+import { createPassableWait, createWait, createWaitUntil, createWaitUntilTimeout, TimerState } from '../wait';
 import { clamp } from '../utils';
 import { Body, Circle, System } from 'detect-collisions';
 import { DuelMap, getRandomMap } from './duel/DuelMaps';
@@ -12,6 +12,9 @@ enum RoundStage {
   BATTLE,
   RESULTS,
 }
+
+// 10 minutes to ready up or game is destroyed
+const READY_UP_TIMEOUT = 10 * 60 * 1000;
 
 // Game constants
 const RESULTS_DELAY = 5000; // in ms
@@ -86,7 +89,7 @@ export class Duel extends Game<DuelPlayerData> {
   roundOver: TimerState = { pass: false };
   winner: string = '';
 
-  collisionSystem: System;
+  collisionSystem: System = new System();
   currentMap: DuelMap = getRandomMap();
   walls: Body[] = [];
   
@@ -96,8 +99,8 @@ export class Duel extends Game<DuelPlayerData> {
    * @param creatorId The user ID of the creator
    * @param getClient A function to get a client's SocketClient from the server
    */
-  constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined) {
-    super(joinCode, creatorId, DUEL_GAME_CONFIG, getClient);
+  constructor(joinCode: string, creatorId: string, getClient: (id: string) => SocketClient | undefined, end: () => void) {
+    super(joinCode, creatorId, DUEL_GAME_CONFIG, getClient, end);
 
     // Create the empty collision system
     this.collisionSystem = new System();
@@ -127,8 +130,8 @@ export class Duel extends Game<DuelPlayerData> {
       stats: this.getStats(),
     });
     this.sendReadyStateUpdate();
-    // Wait until all players are ready
-    await createWaitUntil(this.allReady);
+    // Wait until all players are ready or until too much time has passed
+    await createWaitUntilTimeout(this.allReady, READY_UP_TIMEOUT, this.end);
 
     // Initialize the round
     this.initializeDuel();

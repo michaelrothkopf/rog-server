@@ -61,5 +61,37 @@ export const createWaitUntil = (timerState: TimerState, resetStateAfterPass?: bo
         resolve();
       }
     }, CHECK_INTERVAL);
-  })
+  });
+}
+
+/**
+ * Creates a promise that resolves after state is updated or calls a timeout function if too much time passes
+ * @param timerState The timer state object to refer to
+ * @param timeout How long to wait before timing out
+ * @param timeoutCallback The function to call if the wait times out
+ * @param resetStateAfterPass Whether to reset timerState upon passing
+ * @returns The waiting Promise object
+ */
+export const createWaitUntilTimeout = (timerState: TimerState, timeout: number, timeoutCallback: () => void, resetStateAfterPass?: boolean): Promise<void> => {
+  return new Promise(resolve => {
+    const interval = setInterval(() => {
+      if (timerState.pass) {
+        // Clear the checker
+        clearInterval(interval);
+        // If the user wants to reset the state, reset it
+        if (resetStateAfterPass) timerState.pass = false;
+        // Regardless, resolve the promise
+        resolve();
+      }
+    }, CHECK_INTERVAL);
+
+    // Wait for the timeout
+    setTimeout(() => {
+      // Call the timeout callback
+      timeoutCallback();
+
+      // Clear the check interval but don't resolve the promise
+      clearInterval(interval);
+    }, timeout);
+  });
 }
