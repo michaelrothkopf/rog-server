@@ -57,7 +57,7 @@ export const handleLogin = async (req: Request, res: Response) => {
   }
 
   // Authentication successful
-  return res.status(200).cookie('NANGAM_AUTH_TOKEN', authResult.authtoken.token, { maxAge: AUTH_TOKEN_LIFESPAN }).send({
+  return res.status(200).cookie('ROG_AUTH_TOKEN', authResult.authtoken.token, { maxAge: AUTH_TOKEN_LIFESPAN }).send({
     message: `Authentication successful.`,
     token: authResult.authtoken.token,
     tokenExpires: authResult.authtoken.expires,
@@ -124,7 +124,7 @@ export const handleSignup = async (req: Request, res: Response) => {
   });
 
   // Authentication successful
-  return res.status(200).cookie('NANGAM_AUTH_TOKEN', authtoken.token).send({
+  return res.status(200).cookie('ROG_AUTH_TOKEN', authtoken.token).send({
     message: `Authentication successful.`,
     token: authtoken.token,
     user: {

@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/michaelrothkopf/nangam-server.git"
+    "url": "git+https://github.com/michaelrothkopf/rog-server.git"
   },
   "author": "Michael Rothkopf",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/michaelrothkopf/nangam-server/issues"
+    "url": "https://github.com/michaelrothkopf/rog-server/issues"
   },
-  "homepage": "https://github.com/michaelrothkopf/nangam-server#readme",
+  "homepage": "https://github.com/michaelrothkopf/rog-server#readme",
   "dependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^5.0.0",
