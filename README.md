@@ -6,7 +6,7 @@ It includes the [API routes](src/routes) which handle [authentication](src/core/
 
 It also includes the Socket.IO [server handlers](src/core/live) and the [game engine](src/core/engine).
 
-## Components
+## Structure
 
 | Name                      | Description                                                          |
 | ------------------------- | -------------------------------------------------------------------- |
