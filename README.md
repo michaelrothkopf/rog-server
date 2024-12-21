@@ -1,6 +1,6 @@
-# Rothkopf Online Games  Server
+# Rothkopf Online Games Server
 
-This repository holds the TypeScript code for the server.
+This repository holds the TypeScript code for the server. There is a [separate repository](https://github.com/michaelrothkopf/rog-web-client) for the client code.
 
 It includes the [API routes](src/routes) which handle [authentication](src/core/auth), [friending](src/core/schemas/Friendship.model.ts), and potential future systems like clubs or group chats.
 
