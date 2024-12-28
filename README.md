@@ -28,7 +28,7 @@ This stack allows the server to clearly separate its live and REST routes and pr
 
 Using the core structure, new games and features can be added without extensively modifying existing code.
 
-### Application Flow
+## Application Flow
 
 When the user first opens the website, it prompts them to log in or make an account.
 
@@ -50,7 +50,9 @@ On the server side, the game manager hands control of the game loop to an asynch
 
 When the host wishes to end the game, the game manager sends the termination code to all clients and the client redirects the users back to the home page.
 
-### Database Structure
+## User Data Management
+
+### Database
 
 The database consists of three models: Authtoken, Friendship, and User.
 
@@ -62,7 +64,7 @@ The Friendship model also contains helper functions for retrieving users' friend
 
 [User](src/core/db/schemas/User.model.ts) stores the user data that ROG needs to function. Most of these fields are standard, but it has two special features: a "locked" field, representing whether a site administrator has locked the user's account, preventing a login, and "lastLogin"/"lastLogout" Date fields which will, in the future, allow other users to see if their friends are online. (This feature will be most useful once I've added messaging.)
 
-### Route Structure
+### Route
 
 The REST routes are structured to match the underlying database models they access.
 
