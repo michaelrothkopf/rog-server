@@ -26,7 +26,7 @@ It uses Winston for logging.
 
 This stack allows the server to clearly separate its live and REST routes and promotes rapid but stable development.
 
-Using the core structure, developers can add new games and features without extensively modifying existing code.
+Using the core structure, new games and features can be added without extensively modifying existing code.
 
 ### Application Flow
 
