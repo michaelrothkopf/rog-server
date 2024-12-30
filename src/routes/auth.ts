@@ -5,6 +5,7 @@ import { hashSync as hashPassword, hashSync } from 'bcrypt';
 import { Request, Response } from 'express';
 import { User } from '../core/db/schemas/User.model';
 import { Authtoken, AUTH_TOKEN_LIFESPAN } from '../core/db/schemas/Authtoken.model';
+import { logger } from '../utils/logger';
 
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 32;
@@ -80,6 +81,7 @@ export const handleSignup = async (req: Request, res: Response) => {
       !(typeof req.body.password === 'string') ||
       !(typeof req.body.email === 'string')
   ) {
+    logger.debug(`[AUTH] Couldn't create account: Signup parameters not provided or incorrect formats.`);
     return res.status(400).send({
       message: `Signup parameters not provided or incorrect formats.`,
     });
@@ -87,12 +89,14 @@ export const handleSignup = async (req: Request, res: Response) => {
 
   // If the username doesn't meet the criteria
   if (!validateUsername(req.body.username)) {
+    logger.debug(`[AUTH] Couldn't create account: Invalid username. Must be 3-32 characters and alphanumeric.`);
     return res.status(400).send({
       message: `Invalid username. Must be 3-32 characters and alphanumeric.`,
     });
   }
   // If the email doesn't meet the criteria
   if (!validateEmail(req.body.email)) {
+    logger.debug(`[AUTH] Couldn't create account: Invalid email. Must conform to RFC 5322.`);
     return res.status(400).send({
       message: `Invalid email. Must conform to RFC 5322.`,
     });
@@ -101,6 +105,7 @@ export const handleSignup = async (req: Request, res: Response) => {
   // Check if the username is already in use
   let existingUser = await User.findOne({ username: { $regex: new RegExp(`^${req.body.username}$`, 'i') }}).exec();
   if (existingUser !== null) {
+    logger.debug(`[AUTH] Couldn't create account: Username is already in use.`);
     return res.status(400).send({
       message: `Username already in use.`,
     });
@@ -108,6 +113,7 @@ export const handleSignup = async (req: Request, res: Response) => {
   // Check if the email is already in use
   existingUser = await User.findOne({ email: { $regex: new RegExp(`^${req.body.email}$`, 'i') }}).exec();
   if (existingUser !== null) {
+    logger.debug(`[AUTH] Couldn't create account: Email is already in use.`);
     return res.status(400).send({
       message: `Email already in use.`,
     });
@@ -124,9 +130,11 @@ export const handleSignup = async (req: Request, res: Response) => {
   });
 
   // Authentication successful
+  logger.info(`[AUTH] Created new account with username ${user.username}.`);
   return res.status(200).cookie('ROG_AUTH_TOKEN', authtoken.token).send({
     message: `Authentication successful.`,
     token: authtoken.token,
+    tokenExpires: authtoken.expires,  
     user: {
       _id: user._id,
       username: user.username,

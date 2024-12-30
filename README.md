@@ -26,9 +26,9 @@ It uses Winston for logging.
 
 This stack allows the server to clearly separate its live and REST routes and promotes rapid but stable development.
 
-Using the core structure, developers can add new games and features without extensively modifying existing code.
+Using the core structure, new games and features can be added without extensively modifying existing code.
 
-### Application Flow
+## Application Flow
 
 When the user first opens the website, it prompts them to log in or make an account.
 
@@ -50,7 +50,9 @@ On the server side, the game manager hands control of the game loop to an asynch
 
 When the host wishes to end the game, the game manager sends the termination code to all clients and the client redirects the users back to the home page.
 
-### Database Structure
+## User Data Management
+
+### Database
 
 The database consists of three models: Authtoken, Friendship, and User.
 
@@ -61,3 +63,11 @@ The database consists of three models: Authtoken, Friendship, and User.
 The Friendship model also contains helper functions for retrieving users' friend lists and friend requests.
 
 [User](src/core/db/schemas/User.model.ts) stores the user data that ROG needs to function. Most of these fields are standard, but it has two special features: a "locked" field, representing whether a site administrator has locked the user's account, preventing a login, and "lastLogin"/"lastLogout" Date fields which will, in the future, allow other users to see if their friends are online. (This feature will be most useful once I've added messaging.)
+
+### Route
+
+The REST routes are structured to match the underlying database models they access.
+
+The [authentication routes](src/routes/auth.ts) contains utility methods and route handlers that allow users to create accounts and log in via the login page. (Note that the live server authentication is handled by the [live module's SocketServer class](src/core/live/SocketServer.ts).) Authentication routes depend heavily on the [common authentication utility file](src/core/auth/auth.ts), which contains helper functions for password and Authtoken verification. These routes relate to both the User and Authtoken models in the database.
+
+The [friends routes](src/routes/friends.ts) exclusively deal with friendships. They allow users to see their friend list, check incoming friend requests, accept/decline requests, send friend requests, and remove friends.
