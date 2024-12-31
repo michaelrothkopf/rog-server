@@ -1,4 +1,4 @@
-import { authenticateUser } from '../core/auth/auth';
+import { authenticateUser, validateAuthenticationToken } from '../core/auth/auth';
 
 import { hashSync as hashPassword, hashSync } from 'bcrypt';
 
@@ -22,6 +22,10 @@ const validateUsername = (username: string): boolean => {
 
 const validateEmail = (email: string): boolean => {
   return EMAIL_REGEX.test(email);
+}
+
+const validatePassword = (password: string): boolean => {
+  return (password.length >= 5 && password.length <= 256);
 }
 
 export const handleLogin = async (req: Request, res: Response) => {
@@ -101,6 +105,13 @@ export const handleSignup = async (req: Request, res: Response) => {
       message: `Invalid email. Must conform to RFC 5322.`,
     });
   }
+  // If the password doesn't meet the criteria
+  if (!validatePassword(req.body.password)) {
+    logger.debug(`[AUTH] Couldn't create account: Invalid password. Must be between 5 and 256 characters long.`);
+    return res.status(400).send({
+      message: `Invalid password. Must be between 5 and 256 characters long.`,
+    });
+  }
 
   // Check if the username is already in use
   let existingUser = await User.findOne({ username: { $regex: new RegExp(`^${req.body.username}$`, 'i') }}).exec();
@@ -143,5 +154,51 @@ export const handleSignup = async (req: Request, res: Response) => {
       lastLogin: user.lastLogin,
       lastLogout: user.lastLogout,
     },
+  });
+}
+
+export const handleChangePassword = async (req: Request, res: Response) => {
+  // Verify that the user is logged in
+  const token = req.header('Authtoken');
+  if (!token) {
+    return res.status(401).send({
+      message: `Must be logged in to perform this action.`
+    });
+  }
+  const { user, success } = await validateAuthenticationToken(token);
+  if (!success || !user) {
+    return res.status(401).send({
+      message: `Must be logged in to perform this action`,
+    });
+  }
+
+  // Verify the request data
+  if (!('oldPassword' in req.body) || !('newPassword' in req.body) ||
+    !(typeof req.body.oldPassword === 'string') ||
+    !(typeof req.body.newPassword === 'string') ||
+    !validatePassword(req.body.newPassword)
+  ) {
+    return res.status(401).send({
+      message: `Request to change password must contain old and new password. New password must be between 5 and 256 characters.`,
+    });
+  }
+
+  // Verify the old password
+  const authResult = await authenticateUser(user.username, req.body.oldPassword);
+
+  // If the password was incorrect
+  if (!authResult.success) {
+    return res.status(401).send({
+      message: `Couldn't reset password; failed authentication with old password, message: '${authResult.message}'`,
+    });
+  }
+
+  // Set the user's new password
+  user.password = hashSync(req.body.newPassword, PASSWORD_SALT_ROUNDS);
+  await user.save();
+  
+  // Success
+  return res.status(200).send({
+    message: `Successfully changed password.`,
   });
 }
