@@ -1,5 +1,5 @@
 import express from 'express';
-import { handleLogin, handleSignup } from './auth';
+import { handleChangePassword, handleLogin, handleSignup } from './auth';
 import { handleAcceptFriendRequest, handleCreateFriendRequest, handleDeclineFriendRequest, handleGetFriendRequests, handleGetFriends, handleRemoveFriend } from './friends';
 
 /**
@@ -15,6 +15,7 @@ export const createRoutes = (app: express.Application) => {
   // Authentication routes
   app.post('/auth/login', (req, res) => { handleLogin(req, res) });
   app.post('/auth/signup', (req, res) => { handleSignup(req, res) });
+  app.post('/auth/change_password', (req, res) => { handleChangePassword(req, res) });
 
   // Friendship routes
   app.get('/friends', (req, res) => { handleGetFriends(req, res) });
