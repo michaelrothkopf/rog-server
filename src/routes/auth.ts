@@ -1,6 +1,6 @@
 import { authenticateUser, validateAuthenticationToken } from '../core/auth/auth';
 
-import { hashSync as hashPassword, hashSync } from 'bcrypt';
+import { hashSync as hashPassword, compareSync as comparePassword } from 'bcrypt';
 
 import { Request, Response } from 'express';
 import { User } from '../core/db/schemas/User.model';
@@ -134,7 +134,7 @@ export const handleSignup = async (req: Request, res: Response) => {
   const user = await User.create({
     username: req.body.username,
     email: req.body.email,
-    password: hashSync(req.body.password, PASSWORD_SALT_ROUNDS),
+    password: hashPassword(req.body.password, PASSWORD_SALT_ROUNDS),
   });
   const authtoken = await Authtoken.create({
     user: user,
@@ -184,17 +184,17 @@ export const handleChangePassword = async (req: Request, res: Response) => {
   }
 
   // Verify the old password
-  const authResult = await authenticateUser(user.username, req.body.oldPassword);
+  const oldPasswordCorrect = comparePassword(req.body.oldPassword, user.password);
 
   // If the password was incorrect
-  if (!authResult.success) {
+  if (!oldPasswordCorrect) {
     return res.status(401).send({
-      message: `Couldn't reset password; failed authentication with old password, message: '${authResult.message}'`,
+      message: `Couldn't reset password; old password incorrect`,
     });
   }
 
   // Set the user's new password
-  user.password = hashSync(req.body.newPassword, PASSWORD_SALT_ROUNDS);
+  user.password = hashPassword(req.body.newPassword, PASSWORD_SALT_ROUNDS);
   await user.save();
   
   // Success
