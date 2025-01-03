@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { sanitizeUserData, UNAVAILABLE_USER, User } from '../core/db/schemas/User.model';
 import { Friendship, FriendshipData, getFriendship, getUserFriendRequests, getUserFriends, usersHaveFriendshipRecord } from '../core/db/schemas/Friendship.model';
 import { validateAuthenticationToken } from '../core/auth/auth';
+import { liveServer } from '..';
 
 export const handleGetFriends = async (req: Request, res: Response) => {
   const token = req.header('Authtoken');
@@ -250,5 +251,35 @@ export const handleRemoveFriend = async (req: Request, res: Response) => {
   await friendship.deleteOne();
   return res.status(200).send({
     message: `Successfully removed friend.`,
+  });
+}
+
+export const handleGetFriendGames = async (req: Request, res: Response) => {
+  const token = req.header('Authtoken');
+  if (!token) {
+    return res.status(401).send({
+      message: `Must be logged in to perform this action.`
+    });
+  }
+  const { user, success } = await validateAuthenticationToken(token);
+  if (!success || !user) {
+    return res.status(401).send({
+      message: `Must be logged in to perform this action.`,
+    });
+  }
+
+  // Get the list of friend user IDs
+  const friends = await getUserFriends(user);
+  // Get the list of games friends are currently in
+  const friendGames = liveServer.gameManager.getGamesWithPlayers(friends.map((friendship) => {
+    // Extract the non-this-user IDs from the friend list
+    if (friendship.recipient === user._id) return friendship.initiator.toString();
+    return friendship.recipient.toString();
+  }));
+
+  // Return the list to the client
+  return res.status(200).send({
+    message: `Successfully retreived friend games.`,
+    friendGames,
   });
 }

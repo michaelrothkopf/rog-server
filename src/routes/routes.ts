@@ -1,6 +1,6 @@
 import express from 'express';
 import { handleChangePassword, handleLogin, handleSignup, handleValidateAuthtoken } from './auth';
-import { handleAcceptFriendRequest, handleCreateFriendRequest, handleDeclineFriendRequest, handleGetFriendRequests, handleGetFriends, handleRemoveFriend } from './friends';
+import { handleAcceptFriendRequest, handleCreateFriendRequest, handleDeclineFriendRequest, handleGetFriendGames, handleGetFriendRequests, handleGetFriends, handleRemoveFriend } from './friends';
 
 /**
  * Populates the Express application with the routes
@@ -25,4 +25,5 @@ export const createRoutes = (app: express.Application) => {
   app.put('/friends/request/accept', (req, res) => { handleAcceptFriendRequest(req, res) });
   app.put('/friends/request/decline', (req, res) => { handleDeclineFriendRequest(req, res) });
   app.delete('/friends', (req, res) => { handleRemoveFriend(req, res) });
+  app.get('/friends/active_games', (req, res) => { handleGetFriendGames(req, res) });
 }

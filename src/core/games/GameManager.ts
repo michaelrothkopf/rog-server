@@ -17,6 +17,15 @@ export const availableGames = [
 // The time players have between creating a game and starting it before the room is closed
 const GAME_JOIN_TIMEOUT = 10 * 60 * 1000;
 
+// The information received by prospective players (those who have not yet joined the game)
+export interface OutsiderGameData {
+  joinCode: string;
+  numJoined: number;
+  maxPlayers: number;
+  friendlyName: string;
+  creatorDisplayName: string;
+}
+
 export class GameManager {
   // Map of join codes to games
   activeGames: Map<string, Game<BasePlayerData>> = new Map();
@@ -281,4 +290,39 @@ export class GameManager {
     }
     return false;
   }
+
+  /**
+   * Gets a list of games containing one or more players from a list of userIds
+   * @param userIds The list of users to check
+   * @returns OutsiderGameData for each matching game
+   */
+  getGamesWithPlayers(userIds: string[]): OutsiderGameData[] {
+    const result: OutsiderGameData[] = [];
+
+    // For each game
+    for (const game of this.activeGames) {
+      let add = false;
+      // For each user
+      for (const player of userIds) {
+        // If the user is in the game, add it to the list and don't bother checking the rest
+        if (game[1].players.has(player)) {
+          add = true;
+          break;
+        }
+      }
+
+      if (add) {
+        // Add the game
+        result.push({
+          joinCode: game[0],
+          numJoined: game[1].players.size,
+          maxPlayers: game[1].gameConfig.maxPlayers,
+          friendlyName: game[1].gameConfig.friendlyName,
+          creatorDisplayName: game[1].players.get(game[1].creatorId)?.displayName || `Unknown Player`,
+        });
+      }
+    }
+
+    return result;
+  } 
 }
