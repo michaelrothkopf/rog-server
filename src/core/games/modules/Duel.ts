@@ -265,7 +265,7 @@ export class Duel extends Game<DuelPlayerData> {
     // Create a movement vector
     let mvx = 0;
     let mvy = 0;
-    // Set the vector components based on the movement directionss
+    // Set the vector components based on the movement directions
     if (directions.includes('right')) {
       mvx = 1;
     }
@@ -341,6 +341,10 @@ export class Duel extends Game<DuelPlayerData> {
       { x: startX, y: startY },
       { x: endX, y: endY },
     );
+
+    // Get the hit coordinates of the shot (actual end coordinates)
+    const hitX = hit?.point.x || endX;
+    const hitY = hit?.point.y || endY;
     
     const hitPlayer = hit && hit.body && hit.body.userData && 'userId' in hit.body.userData && typeof hit.body.userData.userId === 'string';
     // If the shot hit a player
@@ -363,7 +367,7 @@ export class Duel extends Game<DuelPlayerData> {
     // Send the player shot update
     this.sendAll('duelShot', {
       userId,
-      startX, startY, endX, endY,
+      startX, startY, hitX, hitY,
       direction,
       hit: hitPlayer ? hit?.body.userData?.userId || null : null,
     });
