@@ -202,3 +202,24 @@ export const handleChangePassword = async (req: Request, res: Response) => {
     message: `Successfully changed password.`,
   });
 }
+
+export const handleValidateAuthtoken = async (req: Request, res: Response) => {
+  // Verify that the user is logged in
+  const token = req.header('Authtoken');
+  if (!token) {
+    return res.status(401).send({
+      message: `Authtoken invalid: none provided.`
+    });
+  }
+  const { user, success } = await validateAuthenticationToken(token);
+  if (!success || !user) {
+    return res.status(401).send({
+      message: `Authtoken invalid.`,
+    });
+  }
+
+  // Return success
+  return res.status(200).send({
+    message: `Authtoken is valid.`,
+  });
+}
