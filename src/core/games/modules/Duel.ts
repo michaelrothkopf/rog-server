@@ -342,7 +342,7 @@ export class Duel extends Game<DuelPlayerData> {
       { x: endX, y: endY },
     );
     // If the shot hit a player
-    if (hit && 'userData' in hit.body) {
+    if (hit && 'userId' in hit.body.userData) {
       // Get the target Player
       const target = this.players.get(hit.body.userData.userId);
 
