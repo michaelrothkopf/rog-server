@@ -341,22 +341,21 @@ export class Duel extends Game<DuelPlayerData> {
       { x: startX, y: startY },
       { x: endX, y: endY },
     );
-    // If the shot hit something
-    if (hit) {
-      // If the shot hit a wall, don't do anything
-      if (!('userData' in hit.body)) return;
-
+    // If the shot hit a player
+    if (hit && 'userData' in hit.body) {
       // Get the target Player
       const target = this.players.get(hit.body.userData.userId);
-      if (!target) return;
-      // Take damage
-      target.health = Math.max(0, target.health - SHOT_DAMAGE);
 
-      // Increase the hit statistic
-      player.numHits++;
+      if (target) {
+        // Take damage
+        target.health = Math.max(0, target.health - SHOT_DAMAGE);
 
-      // Update the clients to the new health
-      this.sendStateUpdate(hit.body.userData.userId, target);
+        // Increase the hit statistic
+        player.numHits++;
+
+        // Update the clients to the new health
+        this.sendStateUpdate(hit.body.userData.userId, target);
+      }
     }
 
     // Send the player shot update
