@@ -340,10 +340,12 @@ export class Duel extends Game<DuelPlayerData> {
     const hit = this.collisionSystem.raycast(
       { x: startX, y: startY },
       { x: endX, y: endY },
-      (body, ray) => (body.userData && 'userId' in body.userData),
     );
-    // If the shot hit someone
+    // If the shot hit something
     if (hit) {
+      // If the shot hit a wall, don't do anything
+      if (!('userData' in hit.body)) return;
+
       // Get the target Player
       const target = this.players.get(hit.body.userData.userId);
       if (!target) return;
