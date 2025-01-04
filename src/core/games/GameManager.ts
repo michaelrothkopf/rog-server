@@ -2,6 +2,7 @@ import { BasePlayerData, Game } from './Game';
 
 import { Hilar, HILAR_GAME_CONFIG } from './modules/Hilar';
 import { Duel, DUEL_GAME_CONFIG } from './modules/Duel';
+import { Chat, CHAT_GAME_CONFIG } from './modules/Chat';
 
 import { logger } from '../../utils/logger';
 import { JoinCodeGenerator } from './JoinCodeGenerator';
@@ -12,6 +13,7 @@ import { SocketServer } from '../live/SocketServer';
 export const availableGames = [
   HILAR_GAME_CONFIG.friendlyName,
   DUEL_GAME_CONFIG.friendlyName,
+  CHAT_GAME_CONFIG.friendlyName,
 ];
 
 // The time players have between creating a game and starting it before the room is closed
@@ -71,17 +73,58 @@ export class GameManager {
       });
       return false;
     }
+    // If the game has already started and the player can't join after it starts
+    if (game.hasBegun && !game.gameConfig.canJoinAfterBegin) {
+      // Send the player an error message
+      player.socket.emit('gameError', {
+        module: 'JOIN',
+        message: `Game has already begun and doesn't permit joining after it starts`,
+      });
+      return false;
+    }
     
     // No errors, join the game
     game.addPlayer(player.user._id.toString(), player.user.username);
+
+    // If the game has already started
+    if (game.hasBegun) {
+      // Add the event listeners for the new player
+      game.addHandlers(player.user._id.toString(), player);
+    }
 
     player.socket.emit('gameInfo', {
       gameId: game.gameConfig.gameId,
       joinCode: game.joinCode,
       isHost: isHost || false,
+      hasBegun: game.hasBegun,
     });
 
     game.broadcastPlayers();
+
+    return true;
+  }
+
+  /**
+   * Attempt to reconnect a player to a game they're currently in
+   */
+  async attemptRejoin(player: SocketClient): Promise<boolean> {
+    const game = this.getPlayerGame(player.user._id.toString());
+    // If the game doesn't exist, do nothing
+    if (!game) return false;
+
+    // Add the event listeners to the new socket
+    game.addHandlers(player.user._id.toString(), player);
+
+    // Send the game info to the player
+    player.socket.emit('gameInfo', {
+      gameId: game.gameConfig.gameId,
+      joinCode: game.joinCode,
+      isHost: game.creatorId === player.user._id.toString(),
+      hasBegun: game.hasBegun,
+    });
+
+    // Send the game players to the player
+    game.sendPlayersTo(player.user._id.toString());
 
     return true;
   }
@@ -153,6 +196,9 @@ export class GameManager {
     }
     else if (gameId === 'DUEL') {
       game = new Duel(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
+    }
+    else if (gameId === 'CHAT') {
+      game = new Chat(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
     }
     else {
       creator.socket.emit('gameError', {

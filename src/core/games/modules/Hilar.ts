@@ -18,6 +18,9 @@ const POINTS_PER_RESPONSE = 50;
 const ROUND_BONUS_POINTS = 50;
 const N_ROUNDS = 3;
 
+const RESPONSE_MIN_LENGTH = 3;
+const RESPONSE_MAX_LENGTH = 256;
+
 // Holds data related to user question responses
 interface QuestionResponse {
   responseText: string;
@@ -38,6 +41,8 @@ export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
   friendlyName: 'Hilar',
   minPlayers: 2,
   maxPlayers: 8,
+  canJoinAfterBegin: false,
+
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses
     // Boilerplate; displayName is always handled by Game.ts's addPlayer function and the Gamemanager
@@ -48,7 +53,7 @@ export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
     questions: [],
     questionIndices: [],
     canVote: false,
-  }
+  },
 };
 
 export interface HilarPlayerData extends BasePlayerData {
@@ -293,9 +298,9 @@ export class Hilar extends Game<HilarPlayerData> {
    */
   handleQuestionResponse(userId: string, client: SocketClient, payload: any) {
     // If there is no or invalid response text
-    if (typeof payload.responseText !== 'string') {
+    if (typeof payload.responseText !== 'string' || payload.responseText.length < RESPONSE_MIN_LENGTH || payload.responseText > RESPONSE_MAX_LENGTH) {
       client.socket.emit('gameError', {
-        message: 'Client error: response must be a string',
+        message: `Client error: response must be a string between ${RESPONSE_MIN_LENGTH} and ${RESPONSE_MAX_LENGTH} characters long`,
       });
       return;
     }

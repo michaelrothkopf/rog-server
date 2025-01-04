@@ -77,15 +77,7 @@ export class SocketServer {
       });
 
       // If the client is in a game
-      const game = this.gameManager.getPlayerGame(authResult.user._id.toString())
-      if (game) {
-        // Send game info to the client
-        client.socket.emit('gameInfo', {
-          gameId: game.gameConfig.gameId,
-          joinCode: game.joinCode,
-          isHost: game.creatorId === client.user._id.toString(),
-        });
-      }
+      this.gameManager.attemptRejoin(client);
 
       // Break out here to avoid sending failure
       return;

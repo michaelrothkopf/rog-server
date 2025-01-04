@@ -49,6 +49,8 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
   friendlyName: 'Duel',
   minPlayers: 2,
   maxPlayers: 2,
+  canJoinAfterBegin: false,
+  
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses
     // Boilerplate; displayName is always handled by Game.ts's addPlayer function and the Gamemanager
@@ -64,7 +66,7 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
     numShots: 0,
     numHits: 0,
     numWins: 0,
-  }
+  },
 };
 
 export interface DuelPlayerData extends BasePlayerData {

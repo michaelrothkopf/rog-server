@@ -15,6 +15,7 @@ export interface GameConfig<T_PlayerData extends BasePlayerData> {
   friendlyName: string;
   minPlayers: number;
   maxPlayers: number;
+  canJoinAfterBegin: boolean;
   defaultPlayerData: T_PlayerData;
 }
 
@@ -93,7 +94,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
   }
 
   /**
-   * Sends the new list of players in the game to a client
+   * Sends the new list of players in the game to all clients
    */
   broadcastPlayers(): void {
     const players = [];
@@ -104,6 +105,22 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
     }
     // Broadcast the new list of players
     this.sendAll('gamePlayers', {
+      players,
+    });
+  }
+
+  /**
+   * Sends the new list of players in the game to all clients
+   */
+  sendPlayersTo(userId: string): void {
+    const players = [];
+    for (const [userId, userData] of this.players) {
+      players.push({
+        userId, displayName: userData.displayName
+      });
+    }
+    // Broadcast the new list of players
+    this.sendOne(userId, 'gamePlayers', {
       players,
     });
   }

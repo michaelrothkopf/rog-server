@@ -279,8 +279,6 @@ export const handleGetFriendGames = async (req: Request, res: Response) => {
   // Get the list of games friends are currently in
   const friendGames = liveServer.gameManager.getGamesWithPlayers(friendIds);
 
-  console.log(friendIds, friendGames)
-
   // Return the list to the client
   return res.status(200).send({
     message: `Successfully retreived friend games.`,
