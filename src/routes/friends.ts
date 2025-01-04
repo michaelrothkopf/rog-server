@@ -268,14 +268,18 @@ export const handleGetFriendGames = async (req: Request, res: Response) => {
     });
   }
 
-  // Get the list of friend user IDs
+  // Get the list of friendships involving this user
   const friends = await getUserFriends(user);
+  // Convert it to a list of user IDs
+  const friendIds = [];
+  for (const f of friends) {
+    if (f.recipient.toString() === user._id.toString()) friendIds.push(f.initiator.toString());
+    else friendIds.push(f.recipient.toString());
+  }
   // Get the list of games friends are currently in
-  const friendGames = liveServer.gameManager.getGamesWithPlayers(friends.map((friendship) => {
-    // Extract the non-this-user IDs from the friend list
-    if (friendship.recipient === user._id) return friendship.initiator.toString();
-    return friendship.recipient.toString();
-  }));
+  const friendGames = liveServer.gameManager.getGamesWithPlayers(friendIds);
+
+  console.log(friendIds, friendGames)
 
   // Return the list to the client
   return res.status(200).send({
