@@ -6,11 +6,13 @@ export const CHAT_GAME_CONFIG: GameConfig<ChatPlayerData> = {
   friendlyName: 'Chat',
   minPlayers: 1,
   maxPlayers: 32,
+  canJoinAfterBegin: true,
+  canLeaveAfterBegin: true,
+  
   defaultPlayerData: {
     // Boilerplate; displayName is always handled by Game.ts's addPlayer function and the Gamemanager
     displayName: '',
   },
-  canJoinAfterBegin: true,
 };
 
 export interface ChatPlayerData extends BasePlayerData {

@@ -50,6 +50,7 @@ export const DUEL_GAME_CONFIG: GameConfig<DuelPlayerData> = {
   minPlayers: 2,
   maxPlayers: 2,
   canJoinAfterBegin: false,
+  canLeaveAfterBegin: false,
   
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses

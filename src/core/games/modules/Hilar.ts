@@ -42,6 +42,7 @@ export const HILAR_GAME_CONFIG: GameConfig<HilarPlayerData> = {
   minPlayers: 2,
   maxPlayers: 8,
   canJoinAfterBegin: false,
+  canLeaveAfterBegin: false,
 
   defaultPlayerData: {
     // TODO LOW: Modify type management to avoid having to place displayName in all game subclasses

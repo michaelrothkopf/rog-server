@@ -16,6 +16,7 @@ export interface GameConfig<T_PlayerData extends BasePlayerData> {
   minPlayers: number;
   maxPlayers: number;
   canJoinAfterBegin: boolean;
+  canLeaveAfterBegin: boolean;
   defaultPlayerData: T_PlayerData;
 }
 

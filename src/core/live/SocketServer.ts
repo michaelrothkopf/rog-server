@@ -128,7 +128,17 @@ export class SocketServer {
       else {
         logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to terminate a game.`);
       }
-    })
+    });
+
+    client.socket.on('leaveGame', async () => {
+      const result = await this.onLeaveGame(client);
+      if (result) {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) left a game.`);
+      }
+      else {
+        logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to leave a game.`);
+      }
+    });
   }
 
   /**
@@ -163,7 +173,19 @@ export class SocketServer {
     return await this.gameManager.beginGame(client);
   }
 
+  /**
+   * Handles a request to terminate a game 
+   * @returns Whether the game terminated successfully
+   */
   async onTerminateGame(client: SocketClient): Promise<boolean> {
     return await this.gameManager.terminateGame(client);
+  }
+
+  /**
+   * Handles a request to leave a game 
+   * @returns Whether the user left the game
+   */
+  async onLeaveGame(client: SocketClient): Promise<boolean> {
+    return await this.gameManager.leaveGame(client);
   }
 }

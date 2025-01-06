@@ -314,6 +314,45 @@ export class GameManager {
   }
 
   /**
+   * Voluntarily leaves a game
+   * @returns Whether the user left the game
+   */
+  async leaveGame(player: SocketClient): Promise<boolean> {
+    const game = this.getPlayerGame(player.user._id.toString());
+    // If the game doesn't exist
+    if (!game) {
+      // Send the player an error message
+      player.socket.emit('gameError', {
+        module: 'LEAVE',
+        message: 'Game does not exist or player is not in a game',
+      });
+      return false;
+    }
+    // If the game is not able to be left
+    if (!game.gameConfig.canLeaveAfterBegin) {
+      // Send the player an error message
+      player.socket.emit('gameError', {
+        module: 'LEAVE',
+        message: 'Game does not allow leaving early!',
+      });
+      return false;
+    }
+
+    // Remove the player from the game
+    game.removePlayer(player.user._id.toString());
+
+    // Update the game players
+    game.broadcastPlayers();
+
+    // Tell the client they left the game
+    player.socket.emit('gameLeave', {
+      message: `You have left this game.`
+    });
+
+    return true;
+  }
+
+  /**
    * Gets the game a player is currently in
    * @param userId The userId of the player
    * @returns The game the player is in or null if no game found
