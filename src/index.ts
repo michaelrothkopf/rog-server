@@ -46,7 +46,7 @@ else {
 
 // Create the socket.io server
 export const ioServer = new SocketIOServer(httpServer, {
-  path: '/server/live/socket.io',
+  path: '/live/socket.io',
   // Buffer size     1 KB   1 MB   10 MB
   maxHttpBufferSize: 1000 * 1000 * 10,
   // Update: CORS still makes me sad
