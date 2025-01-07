@@ -55,7 +55,8 @@ export const ioServer = new SocketIOServer(httpServer, {
     methods: '*',
     allowedHeaders: '*',
     credentials: false,
-  }
+  },
+  transports: ['websocket'],
 });
 
 // Create the SocketServer
