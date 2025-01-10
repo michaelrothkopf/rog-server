@@ -341,8 +341,15 @@ export class GameManager {
     // Remove the player from the game
     game.removePlayer(player.user._id.toString());
 
-    // Update the game players
-    game.broadcastPlayers();
+    // If there are no players left in the game
+    if (game.players.size === 0) {
+      // End the game
+      logger.debug(`Will delete game ${game.joinCode} because it has no players.`);
+      this.endGame(game.joinCode);
+    } else {
+      // Otherwise, update the game's players
+      game.broadcastPlayers();
+    }
 
     // Tell the client they left the game
     player.socket.emit('gameLeave', {
