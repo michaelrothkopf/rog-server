@@ -49,9 +49,14 @@ export class Chat extends Game<ChatPlayerData> {
    * @param client The client object for the user
    */
   addHandlers(userId: string, client: SocketClient) {
-    // When the player enters a response to the question
+    // When the player sends a message in chat
     client.socket.on('chatMessage', (payload) => {
       this.handleMessage(userId, client, payload);
+    });
+
+    // When the player is typing
+    client.socket.on('chatTyping', () => {
+      this.handleTyping(userId, client);
     });
   }
 
@@ -92,5 +97,28 @@ export class Chat extends Game<ChatPlayerData> {
 
     // Send the message to all clients
     this.sendAll('chatNewMessage', message);
+  }
+
+  /**
+   * Handles a typing indication
+   * @param userId The user ID of the user
+   * @param client The client object for the user
+   * @param payload The payload containing the request data
+   * @returns When the function terminates
+   */
+  handleTyping(userId: string, client: SocketClient) {
+    // If the player is not in the game
+    const player = this.players.get(userId);
+    if (!player) {
+      client.socket.emit('gameError', {
+        message: 'Cannot process message because you have been removed from the game.',
+      });
+      return;
+    }
+
+    // Send the typing indication to all clients except the originator
+    this.sendAllBut(userId, 'chatTypingIndication', {
+      displayName: player.displayName,
+    });
   }
 }

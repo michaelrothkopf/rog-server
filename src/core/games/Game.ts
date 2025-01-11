@@ -144,11 +144,24 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
    * @param args The arguments to pass to the emit function
    */
   sendAll(event: string, ...args: any[]) {
-    for (const p of this.players) {
-      // Get the client associated with the player and send it the questions
-      const client = this.getClient(p[0]);
-      if (!client) continue;
-      client.socket.emit(event, ...args);
+    for (const [uid] of this.players) {
+      // Send the data to the client
+      this.sendOne(uid, event, ...args);
+    }
+  }
+
+  /**
+   * Sends all players except one some data
+   * @param userId The player to NOT send the data to
+   * @param event The event name to send the data under
+   * @param args The arguments to pass to the emit function
+   */
+  sendAllBut(userId: string, event: string, ...args: any[]) {
+    for (const [uid] of this.players) {
+      // Send the data to the client iff the user is not the specified player
+      if (uid !== userId) {
+        this.sendOne(uid, event, ...args);
+      }
     }
   }
 
