@@ -17,7 +17,6 @@ export interface UserData {
 export interface ClientUserData {
   _id: mongoose.Types.ObjectId,
   username: string,
-  email: string,
 
   // Administrators can lock users' accounts via admin panel
   locked: boolean,
@@ -30,7 +29,6 @@ export interface ClientUserData {
 export const UNAVAILABLE_USER: ClientUserData = {
   _id: new mongoose.Types.ObjectId('000000000000000000000000'),
   username: 'user_unavailable',
-  email: 'unavailable@example.com',
   locked: false,
   lastLogin: new Date(),
   lastLogout: new Date(),
@@ -57,7 +55,6 @@ export const sanitizeUserData = (user: UserData | ClientUserData): ClientUserDat
   return {
     _id: user._id,
     username: user.username,
-    email: user.email,
     locked: user.locked,
     lastLogin: user.lastLogin,
     lastLogout: user.lastLogout,

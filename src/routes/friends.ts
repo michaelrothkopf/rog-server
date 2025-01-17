@@ -30,8 +30,8 @@ export const handleGetFriends = async (req: Request, res: Response) => {
       acceptedAt: friendship.acceptedAt,
     };
 
-    result.initiator = await User.findById(friendship.initiator) || UNAVAILABLE_USER;
-    result.recipient = await User.findById(friendship.recipient) || UNAVAILABLE_USER;
+    result.initiator = sanitizeUserData(await User.findById(friendship.initiator) || UNAVAILABLE_USER);
+    result.recipient = sanitizeUserData(await User.findById(friendship.recipient) || UNAVAILABLE_USER);
 
     clientFriendList.push(result);
   }

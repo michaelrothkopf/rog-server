@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
 import { authenticateUser, validateAuthenticationToken } from '../auth/auth';
 import { logger } from '../../utils/logger';
+import { sanitizeUserData } from '../db/schemas/User.model';
 
 export class SocketServer {
   // The Socket.IO server instance the class manages
@@ -63,17 +64,14 @@ export class SocketServer {
       // Create the client event handlers
       this.createClientEventHandlers(client);
 
+      // Update the user's last login
+      authResult.user.lastLogin = new Date();
+      authResult.user.save();
+
       // Confirm the connection to the client
       socket.send('connEstablishRes', {
         success: true,
-        user: {
-          _id: authResult.user._id,
-          username: authResult.user.username,
-          email: authResult.user.email,
-          locked: authResult.user.locked,
-          lastLogin: authResult.user.lastLogout,
-          lastLogout: authResult.user.lastLogout,
-        }
+        user: sanitizeUserData(authResult.user),
       });
 
       // If the client is in a game
@@ -86,20 +84,33 @@ export class SocketServer {
     return socket.send('connEstablishRes', {
       success: false,
       user: null,
+      message: authResult.message,
     });
   }
 
   async createClientEventHandlers(client: SocketClient) {
+    // When the socket is to disconnect
+    client.socket.once('disconnecting', (reason) => {
+      // Mark the client as having logged out
+      client.user.lastLogout = new Date();
+      client.user.save();
+    });
+
+    // When the client tries to create a game
     client.socket.on('createGame', async payload => {
+      // Call the respective handler function
       const result = await this.onCreateGame(client, payload);
+      // If it was successful, log a success message
       if (result) {
         logger.debug(`User ${client.user._id.toString()} (${client.user.username}) created a game of type ${payload.gameId}.`);
       }
+      // Otherwise, debug log an error message
       else {
         logger.debug(`User ${client.user._id.toString()} (${client.user.username}) failed to create a game with payload ${payload}.`);
       }
     });
 
+    // When the client tries to join a game
     client.socket.on('joinGame', async payload => {
       const result = await this.onJoinGame(client, payload);
       if (result) {
@@ -110,6 +121,7 @@ export class SocketServer {
       }
     });
 
+    // When the client tries to begin a game
     client.socket.on('beginGame', async () => {
       const result = await this.onBeginGame(client);
       if (result) {
@@ -120,6 +132,7 @@ export class SocketServer {
       }
     });
 
+    // When the client tries to end a game
     client.socket.on('terminateGame', async () => {
       const result = await this.onTerminateGame(client);
       if (result) {
@@ -130,6 +143,7 @@ export class SocketServer {
       }
     });
 
+    // When the client tries to leave a game
     client.socket.on('leaveGame', async () => {
       const result = await this.onLeaveGame(client);
       if (result) {

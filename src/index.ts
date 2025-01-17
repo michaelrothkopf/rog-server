@@ -57,6 +57,8 @@ export const ioServer = new SocketIOServer(httpServer, {
     credentials: false,
   },
   transports: ['websocket'],
+  pingInterval: 20000, // Send pings every 20 seconds
+  pingTimeout: 5000, // Expect a response within 5 seconds
 });
 
 // Create the SocketServer
