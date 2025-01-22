@@ -9,6 +9,9 @@ import { authenticateUser, validateAuthenticationToken } from '../auth/auth';
 import { logger } from '../../utils/logger';
 import { sanitizeUserData } from '../db/schemas/User.model';
 
+// How often to call the GameManager.purge() function, checking to see if disconnected games are still active and purging them if so
+const PURGE_INTERVAL = 1 * 60 * 1000; // ms
+
 export class SocketServer {
   // The Socket.IO server instance the class manages
   io: Server;
@@ -27,6 +30,11 @@ export class SocketServer {
 
     this.createEventHandlers();
     this.gameManager = new GameManager();
+
+    // Periodically call the game manager's purge function to remove old games
+    setInterval(() => {
+      this.gameManager.purge();
+    }, PURGE_INTERVAL);
   }
 
   /**

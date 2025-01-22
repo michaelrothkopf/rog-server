@@ -17,7 +17,9 @@ export const availableGames = [
 ];
 
 // The time players have between creating a game and starting it before the room is closed
-const GAME_JOIN_TIMEOUT = 10 * 60 * 1000;
+const GAME_JOIN_TIMEOUT = 10 * 60 * 1000; // ms
+// The time after which, if the server has received no new messages from a game's players, the game will be shut down
+const GAME_KEEPALIVE_TIMEOUT = 3 * 60 * 1000;
 
 // The information received by prospective players (those who have not yet joined the game)
 export interface OutsiderGameData {
@@ -416,5 +418,25 @@ export class GameManager {
     }
 
     return result;
-  } 
+  }
+
+  /**
+   * Terminates all games that haven't had a message in GAME_KEEPALIVE_TIMEOUT ms
+   */
+  purge(): number {
+    let numPurged = 0;
+
+    // For each game
+    for (const [code, game] of this.activeGames) {
+      // If its last message was more than GAME_KEEPALIVE_TIMEOUT ms ago
+      if (Date.now() - game.lastMessage > GAME_KEEPALIVE_TIMEOUT) {
+        logger.debug(`Will delete game ${code} because it has been more than ${GAME_KEEPALIVE_TIMEOUT} ms since its last message.`);
+        // Terminate the game
+        this.endGame(code);
+        numPurged++;
+      }
+    }
+
+    return numPurged;
+  }
 }

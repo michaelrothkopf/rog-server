@@ -30,6 +30,7 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
 
   hasBegun: boolean;
   end: () => void;
+  lastMessage: number = Date.now();
 
   /**
    * Creates a new abstract Game
@@ -174,6 +175,12 @@ export abstract class Game<T_PlayerData extends BasePlayerData> {
       const client = this.getClient(uid);
       if (!client) continue;
       this.addHandlers(uid, client);
+
+      // Every time the client sends a message, update the game's last message time
+      client.socket.use((socket, next) => {
+        this.lastMessage = Date.now();
+        next();
+      });
     }
   }
 
