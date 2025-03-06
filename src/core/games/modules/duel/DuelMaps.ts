@@ -1,5 +1,3 @@
-import { Box, System } from "detect-collisions";
-
 export interface DuelMap {
   name: string;
   expectedMapW: number;

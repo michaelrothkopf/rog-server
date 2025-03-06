@@ -1,4 +1,4 @@
-import winston from "winston";
+import winston from 'winston';
 
 // Timestamp string for log file names
 const timeString = Date.now();

@@ -1,3 +1,14 @@
+/**
+ * Shuffles an array in-place using the Fisher-Yates algorithm
+ * Code from https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#JavaScript_Implementation
+ */
+export const shuffleArray = (array: any[]) => {
+  for (let i = array.length - 1; i >= 1; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
 // The suit of the card
 export enum CardSuit {
   NULL,
@@ -7,8 +18,8 @@ export enum CardSuit {
   SPADES,
 }
 
-// The value of the card
-export enum CardValue {
+// The rank of the card
+export enum CardRank {
   NULL,
   TWO,
   THREE,
@@ -28,75 +39,75 @@ export enum CardValue {
 // An individual card in a deck
 export interface Card {
   suit: CardSuit;
-  value: CardValue;
+  rank: CardRank;
 }
 
 export const NULL_CARD = {
   suit: CardSuit.NULL,
-  value: CardValue.NULL,
+  rank: CardRank.NULL,
 }
 
 // The standard French 52-card deck
 export const STANDARD_DECK: Card[] = [
   // All clubs
-  { suit: CardSuit.CLUBS, value: CardValue.TWO },
-  { suit: CardSuit.CLUBS, value: CardValue.THREE },
-  { suit: CardSuit.CLUBS, value: CardValue.FOUR },
-  { suit: CardSuit.CLUBS, value: CardValue.FIVE },
-  { suit: CardSuit.CLUBS, value: CardValue.SIX },
-  { suit: CardSuit.CLUBS, value: CardValue.SEVEN },
-  { suit: CardSuit.CLUBS, value: CardValue.EIGHT },
-  { suit: CardSuit.CLUBS, value: CardValue.NINE },
-  { suit: CardSuit.CLUBS, value: CardValue.TEN },
-  { suit: CardSuit.CLUBS, value: CardValue.JACK },
-  { suit: CardSuit.CLUBS, value: CardValue.QUEEN },
-  { suit: CardSuit.CLUBS, value: CardValue.KING },
-  { suit: CardSuit.CLUBS, value: CardValue.ACE },
+  { suit: CardSuit.CLUBS, rank: CardRank.TWO },
+  { suit: CardSuit.CLUBS, rank: CardRank.THREE },
+  { suit: CardSuit.CLUBS, rank: CardRank.FOUR },
+  { suit: CardSuit.CLUBS, rank: CardRank.FIVE },
+  { suit: CardSuit.CLUBS, rank: CardRank.SIX },
+  { suit: CardSuit.CLUBS, rank: CardRank.SEVEN },
+  { suit: CardSuit.CLUBS, rank: CardRank.EIGHT },
+  { suit: CardSuit.CLUBS, rank: CardRank.NINE },
+  { suit: CardSuit.CLUBS, rank: CardRank.TEN },
+  { suit: CardSuit.CLUBS, rank: CardRank.JACK },
+  { suit: CardSuit.CLUBS, rank: CardRank.QUEEN },
+  { suit: CardSuit.CLUBS, rank: CardRank.KING },
+  { suit: CardSuit.CLUBS, rank: CardRank.ACE },
 
   // All diamonds
-  { suit: CardSuit.DIAMONDS, value: CardValue.TWO },
-  { suit: CardSuit.DIAMONDS, value: CardValue.THREE },
-  { suit: CardSuit.DIAMONDS, value: CardValue.FOUR },
-  { suit: CardSuit.DIAMONDS, value: CardValue.FIVE },
-  { suit: CardSuit.DIAMONDS, value: CardValue.SIX },
-  { suit: CardSuit.DIAMONDS, value: CardValue.SEVEN },
-  { suit: CardSuit.DIAMONDS, value: CardValue.EIGHT },
-  { suit: CardSuit.DIAMONDS, value: CardValue.NINE },
-  { suit: CardSuit.DIAMONDS, value: CardValue.TEN },
-  { suit: CardSuit.DIAMONDS, value: CardValue.JACK },
-  { suit: CardSuit.DIAMONDS, value: CardValue.QUEEN },
-  { suit: CardSuit.DIAMONDS, value: CardValue.KING },
-  { suit: CardSuit.DIAMONDS, value: CardValue.ACE },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.TWO },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.THREE },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.FOUR },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.FIVE },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.SIX },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.SEVEN },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.EIGHT },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.NINE },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.TEN },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.JACK },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.QUEEN },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.KING },
+  { suit: CardSuit.DIAMONDS, rank: CardRank.ACE },
 
   // All hearts
-  { suit: CardSuit.HEARTS, value: CardValue.TWO },
-  { suit: CardSuit.HEARTS, value: CardValue.THREE },
-  { suit: CardSuit.HEARTS, value: CardValue.FOUR },
-  { suit: CardSuit.HEARTS, value: CardValue.FIVE },
-  { suit: CardSuit.HEARTS, value: CardValue.SIX },
-  { suit: CardSuit.HEARTS, value: CardValue.SEVEN },
-  { suit: CardSuit.HEARTS, value: CardValue.EIGHT },
-  { suit: CardSuit.HEARTS, value: CardValue.NINE },
-  { suit: CardSuit.HEARTS, value: CardValue.TEN },
-  { suit: CardSuit.HEARTS, value: CardValue.JACK },
-  { suit: CardSuit.HEARTS, value: CardValue.QUEEN },
-  { suit: CardSuit.HEARTS, value: CardValue.KING },
-  { suit: CardSuit.HEARTS, value: CardValue.ACE },
+  { suit: CardSuit.HEARTS, rank: CardRank.TWO },
+  { suit: CardSuit.HEARTS, rank: CardRank.THREE },
+  { suit: CardSuit.HEARTS, rank: CardRank.FOUR },
+  { suit: CardSuit.HEARTS, rank: CardRank.FIVE },
+  { suit: CardSuit.HEARTS, rank: CardRank.SIX },
+  { suit: CardSuit.HEARTS, rank: CardRank.SEVEN },
+  { suit: CardSuit.HEARTS, rank: CardRank.EIGHT },
+  { suit: CardSuit.HEARTS, rank: CardRank.NINE },
+  { suit: CardSuit.HEARTS, rank: CardRank.TEN },
+  { suit: CardSuit.HEARTS, rank: CardRank.JACK },
+  { suit: CardSuit.HEARTS, rank: CardRank.QUEEN },
+  { suit: CardSuit.HEARTS, rank: CardRank.KING },
+  { suit: CardSuit.HEARTS, rank: CardRank.ACE },
 
   // All spades
-  { suit: CardSuit.SPADES, value: CardValue.TWO },
-  { suit: CardSuit.SPADES, value: CardValue.THREE },
-  { suit: CardSuit.SPADES, value: CardValue.FOUR },
-  { suit: CardSuit.SPADES, value: CardValue.FIVE },
-  { suit: CardSuit.SPADES, value: CardValue.SIX },
-  { suit: CardSuit.SPADES, value: CardValue.SEVEN },
-  { suit: CardSuit.SPADES, value: CardValue.EIGHT },
-  { suit: CardSuit.SPADES, value: CardValue.NINE },
-  { suit: CardSuit.SPADES, value: CardValue.TEN },
-  { suit: CardSuit.SPADES, value: CardValue.JACK },
-  { suit: CardSuit.SPADES, value: CardValue.QUEEN },
-  { suit: CardSuit.SPADES, value: CardValue.KING },
-  { suit: CardSuit.SPADES, value: CardValue.ACE },
+  { suit: CardSuit.SPADES, rank: CardRank.TWO },
+  { suit: CardSuit.SPADES, rank: CardRank.THREE },
+  { suit: CardSuit.SPADES, rank: CardRank.FOUR },
+  { suit: CardSuit.SPADES, rank: CardRank.FIVE },
+  { suit: CardSuit.SPADES, rank: CardRank.SIX },
+  { suit: CardSuit.SPADES, rank: CardRank.SEVEN },
+  { suit: CardSuit.SPADES, rank: CardRank.EIGHT },
+  { suit: CardSuit.SPADES, rank: CardRank.NINE },
+  { suit: CardSuit.SPADES, rank: CardRank.TEN },
+  { suit: CardSuit.SPADES, rank: CardRank.JACK },
+  { suit: CardSuit.SPADES, rank: CardRank.QUEEN },
+  { suit: CardSuit.SPADES, rank: CardRank.KING },
+  { suit: CardSuit.SPADES, rank: CardRank.ACE },
 ]
 
 export class Deck {
@@ -105,12 +116,12 @@ export class Deck {
 
   /**
    * Creates a new deck
-   * @param initial The values of the cards to put in the deck
+   * @param initial The ranks of the cards to put in the deck
    * @param shuffle Whether to shuffle the cards once the deck is created
    */
   constructor(initial?: Card[], shuffle?: boolean) {
     this.cards = initial || [];
-    if (shuffle) this.shuffle();
+    if (shuffle) shuffleArray(this.cards);
   }
 
   /**
@@ -120,15 +131,50 @@ export class Deck {
   draw() {
     return this.cards.pop();
   }
+}
 
-  /**
-   * Shuffles all cards in-place using the Fisher-Yates algorithm
-   * Code from https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle#JavaScript_Implementation
-   */
-  shuffle() {
-    for (let i = this.cards.length - 1; i >= 1; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-    }
+export const cardToString = (card: Card): string => {
+  let result = '';
+
+  if (card.rank === CardRank.NULL) {
+    result += 'X';
   }
+  // If the card has a numerical rank, just use that
+  else if (card.rank < CardRank.JACK) {
+    result += `${card.rank + 1}`;
+  }
+  else if (card.rank === CardRank.JACK) {
+    result += `J`
+  }
+  else if (card.rank === CardRank.QUEEN) {
+    result += `Q`
+  }
+  else if (card.rank === CardRank.KING) {
+    result += `K`
+  }
+  else if (card.rank === CardRank.ACE) {
+    result += `A`
+  }
+  else {
+    result += `X`;
+  }
+
+  // Add the suit
+  if (card.suit === CardSuit.CLUBS) {
+    result += `c`;
+  }
+  else if (card.suit === CardSuit.DIAMONDS) {
+    result += `d`;
+  }
+  else if (card.suit === CardSuit.HEARTS) {
+    result += `h`;
+  }
+  else if (card.suit === CardSuit.SPADES) {
+    result += `s`;
+  }
+  else {
+    result += `x`;
+  }
+
+  return result;
 }

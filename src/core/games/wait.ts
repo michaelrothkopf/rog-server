@@ -70,9 +70,10 @@ export const createWaitUntil = (timerState: TimerState, resetStateAfterPass?: bo
  * @param timeout How long to wait before timing out
  * @param timeoutCallback The function to call if the wait times out
  * @param resetStateAfterPass Whether to reset timerState upon passing
+ * @param resolveAfterTimeout Whether to resolve the promise upon timeout
  * @returns The waiting Promise object
  */
-export const createWaitUntilTimeout = (timerState: TimerState, timeout: number, timeoutCallback: () => void, resetStateAfterPass?: boolean): Promise<void> => {
+export const createWaitUntilTimeout = (timerState: TimerState, timeout: number, timeoutCallback: () => void, resetStateAfterPass?: boolean, resolveAfterTimeout?: boolean): Promise<void> => {
   return new Promise(resolve => {
     const interval = setInterval(() => {
       if (timerState.pass) {
@@ -92,6 +93,8 @@ export const createWaitUntilTimeout = (timerState: TimerState, timeout: number, 
 
       // Clear the check interval but don't resolve the promise
       clearInterval(interval);
+
+      if (resolveAfterTimeout) resolve();
     }, timeout);
   });
 }

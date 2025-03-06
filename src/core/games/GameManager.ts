@@ -1,5 +1,6 @@
 import { BasePlayerData, Game } from './Game';
 
+import { Holdem, HOLDEM_GAME_CONFIG } from './modules/Holdem';
 import { Hilar, HILAR_GAME_CONFIG } from './modules/Hilar';
 import { Duel, DUEL_GAME_CONFIG } from './modules/Duel';
 import { Chat, CHAT_GAME_CONFIG } from './modules/Chat';
@@ -11,6 +12,7 @@ import { SocketServer } from '../live/SocketServer';
 
 // The available games to play (must be hard-coded to avoid janky for-loop file imports)
 export const availableGames = [
+  HOLDEM_GAME_CONFIG.friendlyName,
   HILAR_GAME_CONFIG.friendlyName,
   DUEL_GAME_CONFIG.friendlyName,
   CHAT_GAME_CONFIG.friendlyName,
@@ -19,7 +21,7 @@ export const availableGames = [
 // The time players have between creating a game and starting it before the room is closed
 const GAME_JOIN_TIMEOUT = 10 * 60 * 1000; // ms
 // The time after which, if the server has received no new messages from a game's players, the game will be shut down
-const GAME_KEEPALIVE_TIMEOUT = 3 * 60 * 1000;
+const GAME_KEEPALIVE_TIMEOUT = 30 * 60 * 1000;
 
 // The information received by prospective players (those who have not yet joined the game)
 export interface OutsiderGameData {
@@ -193,7 +195,10 @@ export class GameManager {
     let game;
 
     // Select the game from the available games
-    if (gameId === 'HILAR') {
+    if (gameId === 'HOLDEM') {
+      game = new Holdem(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
+    }
+    else if (gameId === 'HILAR') {
       game = new Hilar(joinCode, creator.user._id.toString(), (id: string) => server.clients.get(id), () => this.endGame(joinCode));
     }
     else if (gameId === 'DUEL') {
