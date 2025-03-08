@@ -31,7 +31,7 @@ const BET_ROUND_WAIT_TIME = 5 * 1000; // ms
 // How long the server will wait between rounds of the game
 const BETWEEN_ROUND_DELAY = 2 * 1000; // ms
 
-const N_ROUNDS = 3;
+const N_ROUNDS = 999999999999;
 
 export const HOLDEM_GAME_CONFIG: GameConfig<HoldemPlayerData> = {
   gameId: 'HOLDEM',
