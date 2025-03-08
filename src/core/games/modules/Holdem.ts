@@ -20,6 +20,7 @@ import { getWinners } from './common/poker';
 const STARTING_MONEY = 200;
 const BIG_BLIND = 2;
 const SMALL_BLIND = BIG_BLIND / 2;
+const BET_LIMIT = BIG_BLIND * 5;
 
 // The time after the server sends a bet message for the clients to display the bet before the server sends the next bet request
 const BET_DISPLAY_TIME = 500; // ms
@@ -453,8 +454,8 @@ export class Holdem extends Game<HoldemPlayerData> {
         }
       }
       else if (this.askedAction === BettingAction.RAISE) {
-        // Make sure the player has enough money to perform the given raise and that the raise is more than the call amount; if so, confirm the bet
-        if (this.askedAmount > callAmount && p.money >= this.askedAmount) {
+        // Make sure the player has enough money to perform the given raise and that the raise is more than the call amount and that the raise is within the limit; if so, confirm the bet
+        if (this.askedAmount > callAmount && p.money >= this.askedAmount && this.askedAmount <= BET_LIMIT) {
           // Update the round total to the player's raise amount (how much the player pays minus how much the player would've paid to call)
           roundTotal += this.askedAmount - callAmount;
           // Charge the player's money and add it to their betting total for the round
