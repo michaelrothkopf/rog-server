@@ -21,6 +21,8 @@ const STARTING_MONEY = 200;
 const BIG_BLIND = 2;
 const SMALL_BLIND = BIG_BLIND / 2;
 const BET_LIMIT = BIG_BLIND * 5;
+// The amount of money to give a player who has gone broke (we're nice around here)
+const HELPER_CASH = BET_LIMIT;
 
 // The time after the server sends a bet message for the clients to display the bet before the server sends the next bet request
 const BET_DISPLAY_TIME = 500; // ms
@@ -268,6 +270,11 @@ export class Holdem extends Game<HoldemPlayerData> {
       p.cards = [first, second];
       // Reset the other player data
       p.hasFolded = false;
+
+      // If the player is broke, give them some helper cash
+      if (p.money < BET_LIMIT) {
+        p.money = BET_LIMIT;
+      }
     }
 
     // Update the seat position values
